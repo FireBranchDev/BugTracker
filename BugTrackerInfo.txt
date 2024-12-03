@@ -1,0 +1,13 @@
+BugTracker - Portfolio Project
+A bug tracking app is a portfolio project which can be used by a software development team to track bugs. The user can add several projects which can have different collaborators.
+
+Features:
+1. Create a user account using auth0 for authentication;
+2. Various Auth0 identifies can be linked to a single user account;
+3. Project creation;
+4. Add other collaborators to a project;
+5. Add bugs to a project;
+6. Assign collaborators to a bug;
+7. Assigned collaborators can modify a bug's status (solved, in-progress, closed, etc.);
+8. A role which will permit updating the project's information;
+9. Project owners can delete the project;
