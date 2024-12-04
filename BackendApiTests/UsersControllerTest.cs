@@ -54,7 +54,7 @@ public class UsersControllerTest(DatabaseFixture databaseFixture)
     }
 
     [Fact]
-    public async void Get()
+    public async Task Get()
     {
         using ApplicationDbContext dbContext = DatabaseFixture.CreateContext();
         await dbContext.Database.BeginTransactionAsync();
