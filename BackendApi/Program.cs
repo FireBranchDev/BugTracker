@@ -1,3 +1,4 @@
+using BackendApi.Services;
 using BackendClassLib.Database;
 using BackendClassLib.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +27,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<UserRepository>();
+
+builder.Services.AddSingleton<IUserService, UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
