@@ -62,4 +62,10 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
         await Context.Projects.Where(c => c.Id == projectId && c.Users.Any(x => x.Id == userIdOfCollaboratorToRemove)).ExecuteDeleteAsync();
         await Context.SaveChangesAsync();
     }
+
+    public async Task<List<Project>> GetAllProjectsAsync(int userId)
+    {
+        User? user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        return await Context.Projects.Where(c => c.Users.Contains(user)).ToListAsync();
+    }
 }

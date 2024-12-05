@@ -220,4 +220,54 @@ public class ProjectRepositoryTest : BaseDbCollection
 
         context.ChangeTracker.Clear();
     }
+
+    [Fact]
+    public async Task GetAllProjectsAsync()
+    {
+        using ApplicationDbContext dbContext = DatabaseFixture.CreateContext();
+        await dbContext.Database.BeginTransactionAsync();
+
+        ProjectRepository projectRepository = new(dbContext);
+
+        const int UserIdNotInDb = 1000;
+
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.GetAllProjectsAsync(UserIdNotInDb));
+
+        Auth auth = new()
+        {
+            UserIds = ["auth0|thpsr5x0ysmxuv1nm1yztd6z"],
+            User = new()
+            {
+                DisplayName = "Testing User 1"
+            }
+        };
+        await dbContext.AddAsync(auth);
+        await dbContext.SaveChangesAsync();
+
+        Project testProject1 = new()
+        {
+            Name = "Test Project 1"
+        };
+        testProject1.Users.Add(auth.User);
+
+        Project testProject2 = new()
+        {
+            Name = "Test Project 2"
+        };
+        testProject2.Users.Add(auth.User);
+
+        Project testProject3 = new()
+        {
+            Name = "Test Project 3"
+        };
+        testProject3.Users.Add(auth.User);
+
+        await dbContext.AddRangeAsync([testProject1, testProject2, testProject3]);
+        await dbContext.SaveChangesAsync();
+
+        List<Project> testingUser1Projects = await projectRepository.GetAllProjectsAsync(auth.User.Id);
+        Assert.Equal(3, testingUser1Projects.Count);
+
+        dbContext.ChangeTracker.Clear();
+    }
 }
