@@ -17,11 +17,11 @@ public class ProjectsControllerTest(DatabaseFixture databaseFixture)
 
     public class MyFakeUserService : IUserService
     {
-        public ClaimsPrincipal User { get; set; } = null!;
+        public ClaimsPrincipal? User { get; set; } = null;
 
         public Claim? GetSubClaim()
         {
-            return User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+            return User?.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         }
     }
 
@@ -33,10 +33,10 @@ public class ProjectsControllerTest(DatabaseFixture databaseFixture)
 
         AuthRepository authRepo = new(dbContext);
         ProjectRepository projectRepo = new(dbContext);
-
+        UserRepository userRepo = new(dbContext);
         MyFakeUserService userService = new();
 
-        ProjectsController projectsController = new(authRepo, projectRepo, userService);
+        ProjectsController projectsController = new(authRepo, projectRepo, userRepo, userService);
 
         string auth0UserId = "auth0|h8g6antdzgykodou4s98t0xr";
         Claim subClaim = new(ClaimTypes.NameIdentifier, auth0UserId);
@@ -68,5 +68,75 @@ public class ProjectsControllerTest(DatabaseFixture databaseFixture)
         Assert.Equal(1, await dbContext.Projects.CountAsync());
 
         dbContext.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task GetAllProjects()
+    {
+        using ApplicationDbContext dbContext = DatabaseFixture.CreateContext();
+        await dbContext.Database.BeginTransactionAsync();
+
+        AuthRepository authRepo = new(dbContext);
+        ProjectRepository projectRepo = new(dbContext);
+        UserRepository userRepo = new(dbContext);
+        MyFakeUserService userService = new();
+
+        ProjectsController projectsController = new(authRepo, projectRepo, userRepo, userService);
+
+        IActionResult result = await projectsController.GetAllProjects();
+        Assert.IsType<BadRequestObjectResult>(result);
+        BadRequestObjectResult badRequest = (BadRequestObjectResult)result;
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequest.Value);
+
+        string auth0UserId = "auth0|h8g6antdzgykodou4s98t0xr";
+        Claim subClaim = new(ClaimTypes.NameIdentifier, auth0UserId);
+        ClaimsIdentity claimsIdentity = new([subClaim]);
+        userService.User = new(claimsIdentity);
+
+        result = await projectsController.GetAllProjects();
+        Assert.IsType<BadRequestObjectResult>(result);
+        badRequest = (BadRequestObjectResult)result;
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, badRequest.Value);
+
+        BackendClassLib.Database.Models.Auth auth = await dbContext.Auths.Where(c => c.UserIds.Contains(auth0UserId)).FirstAsync();
+        auth.User = new()
+        {
+            DisplayName = "Test User 1"
+        };
+        await dbContext.SaveChangesAsync();
+
+        BackendClassLib.Database.Models.Project testProject1 = new()
+        {
+            Name = "Test Project 1"
+        };
+        BackendClassLib.Database.Models.Project testProject2 = new()
+        {
+            Name = "Test Project 2"
+        };
+        BackendClassLib.Database.Models.Project testProject3 = new()
+        {
+            Name = "Test Project 3"
+        };
+        BackendClassLib.Database.Models.Project testProject4 = new()
+        {
+            Name = "Test Project 4"
+        };
+        testProject1.Users.Add(auth.User);
+        testProject2.Users.Add(auth.User);
+        testProject3.Users.Add(auth.User);
+        testProject4.Users.Add(auth.User);
+
+        await dbContext.AddRangeAsync([testProject1, testProject2, testProject3, testProject4]);
+        await dbContext.SaveChangesAsync();
+
+        result = await projectsController.GetAllProjects();
+        Assert.IsType<OkObjectResult>(result);
+        OkObjectResult okResult = (OkObjectResult)result;
+
+        Assert.NotNull(okResult.Value);
+        List<BackendClassLib.Database.Models.Project>? projects = (List<BackendClassLib.Database.Models.Project>)okResult.Value;
+        Assert.NotNull(projects);
+        if (projects != null)
+            Assert.Equal(4, projects.Count);
     }
 }
