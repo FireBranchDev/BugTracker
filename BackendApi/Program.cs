@@ -27,6 +27,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<ProjectRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 

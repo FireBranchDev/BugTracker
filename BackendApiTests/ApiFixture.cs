@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BackendClassLib.Database;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -6,6 +8,8 @@ namespace BackendApiTests;
 
 public class ApiFixture : IAsyncLifetime
 {
+    public const string DbConnectionString = @"Server=(localdb)\mssqllocaldb;Database=BugTrackerLiveTest;Trusted_Connection=True;ConnectRetryCount=0";
+
     readonly BackendApiTestingWebApplicationFactory<Program> _factory;
 
     public HttpClient ApiClient { get; set; }
@@ -69,4 +73,10 @@ public class ApiFixture : IAsyncLifetime
     {
         return Task.CompletedTask;
     }
+
+    public static ApplicationDbContext CreateDbContext()
+        => new(
+            new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlServer(DbConnectionString)
+                .Options);
 }

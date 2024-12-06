@@ -19,7 +19,7 @@ public class BackendApiTestingWebApplicationFactory<TStartup> : WebApplicationFa
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseSqlServer(DatabaseFixture.ConnectionString);
+                options.UseSqlServer(ApiFixture.DbConnectionString);
             });
 
             ServiceProvider sp = services.BuildServiceProvider();
