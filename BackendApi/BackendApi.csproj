@@ -6,12 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>082a03ba-dffa-4e5c-816e-b2cd1a2e7f81</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Controllers\WeatherForecastController.cs" />
-    <Compile Remove="WeatherForecast.cs" />
-  </ItemGroup>
-
+	
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
@@ -29,6 +24,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BackendApiTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BackendAPI.IntegrationTests" />
   </ItemGroup>
 
 </Project>
