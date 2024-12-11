@@ -1,4 +1,5 @@
 ﻿using BackendClassLib.Database;
+using ClassLib;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -94,6 +95,37 @@ public class ProjectsControllerTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(content);
         Assert.Equal(3, content.Length);
+    }
+
+    [Fact]
+    public async Task Get_AllProjects_ReturnsNoRecordOfUserAccount()
+    {
+        // Arrange
+        JsonWebTokenHandler jsonWebTokenHandler = new();
+        string? accessToken = _configuration.GetValue<string>("BackendAPI:AccessToken");
+        if (accessToken is null)
+            return;
+
+        JsonWebToken jsonWebToken = jsonWebTokenHandler.ReadJsonWebToken(accessToken);
+
+        using ApplicationDbContext applicationDbContext = CreateContext();
+        await applicationDbContext.Database.EnsureCreatedAsync();
+        await applicationDbContext.Auths.ExecuteDeleteAsync();
+
+        BackendClassLib.Database.Models.Auth auth1 = new()
+        {
+            UserIds = [jsonWebToken.Subject]
+        };
+        await applicationDbContext.AddAsync(auth1);
+        await applicationDbContext.SaveChangesAsync();
+
+        // Act
+        HttpResponseMessage response = await _client.GetAsync("api/projects");
+        string contentAsString = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, contentAsString);
     }
 
     public ApplicationDbContext CreateContext()
