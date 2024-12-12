@@ -1,4 +1,5 @@
-﻿using BackendClassLib.Database;
+﻿using BackendApi.Models;
+using BackendClassLib.Database;
 using ClassLib;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,8 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace BackendAPI.IntegrationTests;
 
@@ -126,6 +129,48 @@ public class ProjectsControllerTests : IClassFixture<CustomWebApplicationFactory
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, contentAsString);
+    }
+
+    [Fact]
+    public async Task Post_Projects_ReturnsValidationProblem()
+    {
+        // Arrange
+        JsonWebTokenHandler jsonWebTokenHandler = new();
+        string? accessToken = _configuration.GetValue<string>("BackendAPI:AccessToken");
+        if (accessToken is null)
+            return;
+
+        JsonWebToken jsonWebToken = jsonWebTokenHandler.ReadJsonWebToken(accessToken);
+
+        using ApplicationDbContext applicationDbContext = CreateContext();
+        await applicationDbContext.Database.EnsureCreatedAsync();
+        await applicationDbContext.Auths.ExecuteDeleteAsync();
+
+        BackendClassLib.Database.Models.Auth auth1 = new()
+        {
+            UserIds = [jsonWebToken.Subject],
+            User = new()
+            {
+                DisplayName = "Testing User 1"
+            }
+        };
+        await applicationDbContext.AddAsync(auth1);
+        await applicationDbContext.SaveChangesAsync();
+
+        Project newProject = new()
+        {
+
+        };
+
+        // Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("api/projects", newProject);
+        string jsonString = await response.Content.ReadAsStringAsync();
+        JsonNode? data = JsonSerializer.Deserialize<JsonNode>(jsonString);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.NotNull(data);
+        Assert.Equal("One or more validation errors occurred.", data?["title"]?.GetValue<string>());
     }
 
     public ApplicationDbContext CreateContext()
