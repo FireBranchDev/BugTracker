@@ -210,6 +210,46 @@ public class ProjectsControllerTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, await response.Content.ReadAsStringAsync());
     }
 
+    [Fact]
+    public async Task Post_Projects_ReturnsNoContent()
+    {
+        // Arrange
+        JsonWebTokenHandler jsonWebTokenHandler = new();
+        string? accessToken = _configuration.GetValue<string>("BackendAPI:AccessToken");
+        if (accessToken is null)
+            return;
+
+        JsonWebToken jsonWebToken = jsonWebTokenHandler.ReadJsonWebToken(accessToken);
+
+        using ApplicationDbContext applicationDbContext = CreateContext();
+        await applicationDbContext.Database.EnsureCreatedAsync();
+        await applicationDbContext.Auths.ExecuteDeleteAsync();
+
+        BackendClassLib.Database.Models.Auth auth1 = new()
+        {
+            UserIds = [jsonWebToken.Subject],
+            User = new()
+            {
+                DisplayName = "Testing User 1"
+            }
+        };
+        await applicationDbContext.Auths.AddAsync(auth1);
+        await applicationDbContext.SaveChangesAsync();
+
+        await applicationDbContext.Projects.ExecuteDeleteAsync();
+
+        Project testProject1 = new()
+        {
+            Name = "Test Project 1"
+        };
+
+        // Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("api/projects", testProject1);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
     public ApplicationDbContext CreateContext()
     => new(
         new DbContextOptionsBuilder<ApplicationDbContext>()
