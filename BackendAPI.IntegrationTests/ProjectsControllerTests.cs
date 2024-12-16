@@ -173,6 +173,43 @@ public class ProjectsControllerTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal("One or more validation errors occurred.", data?["title"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task Post_Projects_ReturnsNoRecordOfUserAccount()
+    {
+        // Arrange
+        JsonWebTokenHandler jsonWebTokenHandler = new();
+        string? accessToken = _configuration.GetValue<string>("BackendAPI:AccessToken");
+        if (accessToken is null)
+            return;
+
+        JsonWebToken jsonWebToken = jsonWebTokenHandler.ReadJsonWebToken(accessToken);
+
+        using ApplicationDbContext applicationDbContext = CreateContext();
+        await applicationDbContext.Database.EnsureCreatedAsync();
+        await applicationDbContext.Auths.ExecuteDeleteAsync();
+
+        BackendClassLib.Database.Models.Auth auth1 = new()
+        {
+            UserIds = [jsonWebToken.Subject]
+        };
+        await applicationDbContext.Auths.AddAsync(auth1);
+        await applicationDbContext.SaveChangesAsync();
+
+        await applicationDbContext.Projects.ExecuteDeleteAsync();
+
+        Project testProject1 = new()
+        {
+            Name = "Test Project 1"
+        };
+
+        // Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("api/projects", testProject1);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, await response.Content.ReadAsStringAsync());
+    }
+
     public ApplicationDbContext CreateContext()
     => new(
         new DbContextOptionsBuilder<ApplicationDbContext>()
