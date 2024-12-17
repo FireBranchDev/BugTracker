@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BackendApiTests", "BackendA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendAPI.IntegrationTests", "BackendAPI.IntegrationTests\BackendAPI.IntegrationTests.csproj", "{43F0889D-6EE5-4A89-ABAC-1AB6A81AB1AD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendClassLib.UnitTests", "BackendClassLib.UnitTests\BackendClassLib.UnitTests.csproj", "{0EA3E3BC-FC4B-4F45-AF8D-2D61B583E7EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{43F0889D-6EE5-4A89-ABAC-1AB6A81AB1AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43F0889D-6EE5-4A89-ABAC-1AB6A81AB1AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43F0889D-6EE5-4A89-ABAC-1AB6A81AB1AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EA3E3BC-FC4B-4F45-AF8D-2D61B583E7EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EA3E3BC-FC4B-4F45-AF8D-2D61B583E7EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EA3E3BC-FC4B-4F45-AF8D-2D61B583E7EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EA3E3BC-FC4B-4F45-AF8D-2D61B583E7EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

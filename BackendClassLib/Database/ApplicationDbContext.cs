@@ -7,8 +7,8 @@ namespace BackendClassLib.Database;
 public class ApplicationDbContext : DbContext
 {
     public DbSet<Auth> Auths { get; set; } = null!;
-    public DbSet<User> Users { get; set; } = null!;
-    public DbSet<Project> Projects { get; set; } = null!;
+    public virtual DbSet<User> Users { get; set; } = null!;
+    public virtual DbSet<Project> Projects { get; set; } = null!;
     public DbSet<ProjectPermission> ProjectPermissions { get; set; } = null!;
     public DbSet<UserProjectPermission> UserProjectPermissions { get; set; } = null!;
 
