@@ -21,4 +21,11 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         });
         await Context.SaveChangesAsync();
     }
+
+    public async Task<List<Bug>> GetBugsAsync(int projectId, int userId)
+    {
+        Project foundProject = await Context.Projects.Include(c => c.Users).Include(c => c.Bugs).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
+        if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
+        return foundProject.Bugs;
+    }
 }
