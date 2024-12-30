@@ -9,8 +9,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Auth> Auths { get; set; } = null!;
     public virtual DbSet<User> Users { get; set; } = null!;
     public virtual DbSet<Project> Projects { get; set; } = null!;
-    public DbSet<ProjectPermission> ProjectPermissions { get; set; } = null!;
-    public DbSet<UserProjectPermission> UserProjectPermissions { get; set; } = null!;
+    public virtual DbSet<ProjectPermission> ProjectPermissions { get; set; } = null!;
+    public virtual DbSet<UserProjectPermission> UserProjectPermissions { get; set; } = null!;
+    public virtual DbSet<Bug> Bugs { get; set; } = null!;
 
     public ApplicationDbContext()
     {

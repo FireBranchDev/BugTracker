@@ -11,9 +11,9 @@ public abstract class BaseEntityTypeConfiguration<TEntityType> : IEntityTypeConf
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.CreatedOn)
-            .HasDefaultValueSql("getutcdate()");
+            .HasDefaultValue(DateTime.UtcNow);
 
         builder.Property(c => c.UpdatedOn)
-            .HasDefaultValueSql("getutcdate()");
+            .HasDefaultValue(DateTime.UtcNow);
     }
 }

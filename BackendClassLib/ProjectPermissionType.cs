@@ -3,5 +3,6 @@
 public enum ProjectPermissionType
 {
     AddCollaborator,
-    RemoveCollaborator
+    RemoveCollaborator,
+    DeleteBug
 }
