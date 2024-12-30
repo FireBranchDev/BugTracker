@@ -419,6 +419,21 @@ namespace BackendClassLib.UnitTests
             };
 
             await context.AddAsync(testBug);
+
+            ProjectPermission deleteBugPermission = new()
+            {
+                Name = "Delete Bug",
+                Description = "The permission to delete a bug from a project.",
+                Type = ProjectPermissionType.DeleteBug
+            };
+
+            await context.AddAsync(new UserProjectPermission()
+            {
+                Project = testProject,
+                User = testingUser,
+                ProjectPermission = deleteBugPermission
+            });
+
             await context.SaveChangesAsync();
 
             BugRepository bugRepository = new(context);
