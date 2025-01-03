@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BackendApi\BackendApi.csproj" />
     <ProjectReference Include="..\BackendClassLib\BackendClassLib.csproj" />
   </ItemGroup>
 

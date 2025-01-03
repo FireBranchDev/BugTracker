@@ -68,4 +68,9 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
         User? user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
         return await Context.Projects.Where(c => c.Users.Contains(user)).ToListAsync();
     }
+
+    public async Task<Project?> FindAsync(int projectId)
+    {
+        return await Task.FromResult<Project?>(null);
+    }
 }
