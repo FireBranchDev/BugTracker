@@ -1,16 +1,19 @@
 ﻿using BackendApi.Controllers;
 using BackendApi.DTOs;
 using BackendApi.Models;
+using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Moq;
 using System.Security.Claims;
+using Bug = BackendClassLib.Database.Models.Bug;
+using Project = BackendClassLib.Database.Models.Project;
+using User = BackendClassLib.Database.Models.User;
 
-namespace BackendClassLib.UnitTests;
+namespace BackendApi.UnitTests;
 
 public class BugsControllerTests
 {
@@ -30,7 +33,7 @@ public class BugsControllerTests
             HttpContext = defaultHttpContext
         };
 
-        Bug bug = new()
+        Models.Bug bug = new()
         {
             Title = "A"
         };
@@ -51,16 +54,16 @@ public class BugsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = 1 }));
+            .Returns(Task.FromResult<Auth>(new() { Id = 1 }));
 
         Mock<IUserRepository> stubUserRepository = new();
-        stubUserRepository.Setup(x => x.FindAsync(1)).Returns(Task.FromResult<Database.Models.User>(new() { Id = 1 }));
+        stubUserRepository.Setup(x => x.FindAsync(1)).Returns(Task.FromResult<User>(new() { Id = 1 }));
 
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(1))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = 1 }));
+            .Returns(Task.FromResult<Project?>(new() { Id = 1 }));
 
-        Bug bug = new()
+        Models.Bug bug = new()
         {
             Title = "A",
             Description = null
@@ -99,11 +102,11 @@ public class BugsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = 1 }));
+            .Returns(Task.FromResult<Auth>(new() { Id = 1 }));
 
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(1))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = 1 }));
+            .Returns(Task.FromResult<User>(new() { Id = 1 }));
 
         Mock<IProjectRepository> stubProjectRepository = new();
         Mock<IBugRepository> stubBugRepository = new();
@@ -124,7 +127,7 @@ public class BugsControllerTests
             HttpContext = defaultHttpContext
         };
 
-        Bug bug = new()
+        Models.Bug bug = new()
         {
             Title = "A"
         };
@@ -145,7 +148,7 @@ public class BugsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = 1 }));
+            .Returns(Task.FromResult<Auth>(new() { Id = 1 }));
 
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(1))
@@ -170,7 +173,7 @@ public class BugsControllerTests
             HttpContext = defaultHttpContext
         };
 
-        Bug bug = new()
+        Models.Bug bug = new()
         {
             Title = "A"
         };
@@ -192,19 +195,19 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
-        Bug newBug = new()
+        Models.Bug newBug = new()
         {
             Title = "A",
             Description = "B"
@@ -273,17 +276,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(null));
+            .Returns(Task.FromResult<Project?>(null));
 
         Mock<IBugRepository> stubBugRepository = new();
 
@@ -321,7 +324,7 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
@@ -365,17 +368,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         Mock<IBugRepository> stubBugRepository = new();
         stubBugRepository.Setup(x => x.GetBugsAsync(ProjectId, UserId))
@@ -415,17 +418,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         const int Bug1Id = 1;
         const int Bug2Id = 2;
@@ -433,7 +436,7 @@ public class BugsControllerTests
 
         Mock<IBugRepository> stubBugRepository = new();
         stubBugRepository.Setup(x => x.GetBugsAsync(ProjectId, UserId))
-            .Returns(Task.FromResult<List<Database.Models.Bug>>([
+            .Returns(Task.FromResult<List<Bug>>([
                 new()
                 {
                     Id = Bug1Id
@@ -515,7 +518,7 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
@@ -562,17 +565,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(null));
+            .Returns(Task.FromResult<Project?>(null));
 
         Mock<IBugRepository> stubBugRepository = new();
 
@@ -612,17 +615,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         const int BugId = 1;
         Mock<IBugRepository> stubBugRepository = new();
@@ -663,17 +666,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         const int BugId = 1;
         Mock<IBugRepository> stubBugRepository = new();
@@ -714,17 +717,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         const int BugId = 1;
         Mock<IBugRepository> stubBugRepository = new();
@@ -765,17 +768,17 @@ public class BugsControllerTests
         const int AuthId = 1;
         Mock<IAuthRepository> stubAuthRepository = new();
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Database.Models.Auth>(new() { Id = AuthId }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
         const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
-            .Returns(Task.FromResult<Database.Models.User>(new() { Id = UserId }));
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Database.Models.Project?>(new() { Id = ProjectId }));
+            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
 
         const int BugId = 1;
         Mock<IBugRepository> stubBugRepository = new();
