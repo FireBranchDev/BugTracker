@@ -8,4 +8,6 @@ public static class ApiErrorMessages
     public const string NoRecordOfUserAccount = "There is no record of a user account being linked to this auth0 user id.";
     public const string ProjectNotFound = "The project was not found.";
     public const string UserNotProjectCollaborator = "The user is not a project collaborator.";
+    public const string NoRecordOfBug = "There is no record of a bug existing with this id.";
+    public const string InsufficientPermissionToDeleteBug = "Insufficient permission to delete bug.";
 }

@@ -102,6 +102,56 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
     }
 
+    [Route("api/projects/{projectId}/bugs/{bugId}")]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteBug(int projectId, int bugId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch(AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        BackendClassLib.Database.Models.Project? project = await _projectRepository.FindAsync(projectId);
+        if (project is null) return NotFound(ApiErrorMessages.ProjectNotFound);
+
+        try
+        {
+            await _bugRepository.DeleteBugAsync(project.Id, user.Id, bugId);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (InsufficientPermissionToDeleteBugException)
+        {
+            return BadRequest(ApiErrorMessages.InsufficientPermissionToDeleteBug);
+        }
+
+        return NoContent();
+    }
+
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
     {
         return new()
