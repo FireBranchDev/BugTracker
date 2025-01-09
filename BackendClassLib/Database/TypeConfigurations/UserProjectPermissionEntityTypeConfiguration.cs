@@ -11,9 +11,9 @@ public class UserProjectPermissionEntityTypeConfiguration : IEntityTypeConfigura
         builder.HasKey(c => new { c.UserId, c.ProjectId, c.ProjectPermissionId });
 
         builder.Property(c => c.CreatedOn)
-            .HasDefaultValue(DateTime.UtcNow);
+            .IsRequired();
 
         builder.Property(c => c.UpdatedOn)
-            .HasDefaultValue(DateTime.UtcNow);
+            .IsRequired();
     }
 }
