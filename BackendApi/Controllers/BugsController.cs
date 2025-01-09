@@ -102,7 +102,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
     }
 
-    [Route("api/projects/{projectId}/bugs/{bugId}")]
+    [Route("/api/projects/{projectId}/bugs/{bugId}")]
     [HttpDelete]
     public async Task<IActionResult> DeleteBug(int projectId, int bugId)
     {
