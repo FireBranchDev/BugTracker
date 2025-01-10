@@ -11,4 +11,6 @@ public class Bug : Base
 
     public int ProjectId { get; set; }
     public Project Project { get; set; } = null!;
+
+    public BugStatusType Status { get; set; }
 }

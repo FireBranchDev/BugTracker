@@ -9,7 +9,10 @@ public class BugEntityTypeConfiguration : BaseEntityTypeConfiguration<Bug>
     {
         base.Configure(builder);
 
-        builder.Property(x => x.Title);
-        builder.Property(x => x.Description);
+        builder.Property(x => x.Title)
+            .IsRequired();
+
+        builder.Property(x => x.Status)
+            .IsRequired();
     }
 }
