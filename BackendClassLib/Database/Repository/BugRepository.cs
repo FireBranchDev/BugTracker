@@ -1,6 +1,7 @@
 ﻿using BackendClassLib.Database.Models;
 using ClassLib.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace BackendClassLib.Database.Repository;
 
@@ -40,5 +41,17 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         Project foundProject = await Context.Projects.Include(c => c.Users).Include(c => c.Bugs).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
         if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
         return foundProject.Bugs.ToList();
+    }
+
+    public async Task MarkBugAsAssigned(int bugId, int projectId, int userId)
+    {
+        Bug? bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        Project? project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User? user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Users.Where(x => x.Id == user.Id && x.Projects.Contains(project)).AnyAsync()) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Bugs.Where(x => x.Id == bugId && x.ProjectId == projectId).AnyAsync()) throw new NotProjectBugException();
+        
+        bug.Status = BugStatusType.Assigned;
+        await Context.SaveChangesAsync();
     }
 }
