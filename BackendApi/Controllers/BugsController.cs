@@ -152,8 +152,6 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
-    [Route("/api/projects/{projectId}/bugs/{bugId}/status/assigned")]
-    [HttpPost]
     public async Task<IActionResult> MarkBugStatusAsAssigned(int projectId, int bugId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
@@ -174,9 +172,9 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         {
             user = await _userRepository.FindAsync(auth.Id);
         }
-        catch (UserNotFoundException)
+        catch(UserNotFoundException)
         {
-            return Unauthorized(ApiErrorMessages.NoRecordOfUserAccount);
+            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
         }
 
         try
