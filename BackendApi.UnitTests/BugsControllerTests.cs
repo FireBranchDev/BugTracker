@@ -836,7 +836,7 @@ public class BugsControllerTests
     }
 
     [Fact]
-    public async Task MarkBugStatusAsAssigned_NoUserAccount_ReturnsBadRequestWithNoRecordOfUserAccountApiErrorMessage()
+    public async Task MarkBugStatusAsAssigned_NoUserAccount_ReturnsForbiddenWithNoRecordOfUserAccountApiErrorMessage()
     {
         // Arrange
         Mock<IAuthRepository> stubAuthRepository = new();
@@ -880,8 +880,9 @@ public class BugsControllerTests
         IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
 
         // Assert
-        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, badRequestObjectResult.Value);
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, objectResult.Value);
     }
 
     [Fact]
