@@ -152,6 +152,55 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
+    public async Task<IActionResult> MarkBugStatusAsAssigned(int projectId, int bugId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch(UserNotFoundException)
+        {
+            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _bugRepository.MarkBugAsAssigned(bugId, projectId, user.Id);
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (NotProjectBugException)
+        {
+            return BadRequest(ApiErrorMessages.BugNotAssociatedWithProject);
+        }
+
+        return NoContent();
+    }
+
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
     {
         return new()

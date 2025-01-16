@@ -1,6 +1,5 @@
 ﻿using BackendApi.Controllers;
 using BackendApi.DTOs;
-using BackendApi.Models;
 using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
@@ -803,6 +802,332 @@ public class BugsControllerTests
 
         // Act
         IActionResult result = await bugsController.DeleteBug(ProjectId, BugId);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_MissingSubClaim_ReturnsBadRequestWithMissingSubClaimApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        Mock<IUserRepository> stubUserRepository = new();
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        const int ProjectId = 0;
+        const int BugId = 0;
+        
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequestObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_NoUserAccount_ReturnsBadRequestWithNoRecordOfUserAccountApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|vrfs3uukji0jp7855ibm2835";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new()
+            {
+                Id = AuthId
+            }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Throws<UserNotFoundException>();
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        const int ProjectId = 0;
+        const int BugId = 0;
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, badRequestObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_ProjectNotFound_ReturnsNotFoundWithProjectNotFoundApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|a94bxpgvpkjq5o2uq8deljv1";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new()
+            {
+                Id = AuthId
+            }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        const int ProjectId = 1;
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        stubBugRepository.Setup(x => x.MarkBugAsAssigned(BugId, ProjectId, UserId))
+            .Throws<ProjectNotFoundException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.ProjectNotFound, notFoundObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_BugNotFound_ReturnsNotFoundWithNoRecordOfBugApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|ed0rtgo71nnujdxrkh4qllrf";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        const int ProjectId = 1;
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        stubBugRepository.Setup(x => x.MarkBugAsAssigned(BugId, ProjectId, UserId))
+            .Throws<BugNotFoundException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.NoRecordOfBug, notFoundObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_UserNotProjectCollaborator_ReturnsBadRequestWithUserNotProjectCollaboratorApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|ed0rtgo71nnujdxrkh4qllrf";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        const int ProjectId = 1;
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        stubBugRepository.Setup(x => x.MarkBugAsAssigned(BugId, ProjectId, UserId))
+            .Throws<UserNotProjectCollaboratorException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.UserNotProjectCollaborator, badRequestObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_NotProjectsBug_ReturnsBadRequestWithBugNotAssociatedWithProjectApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|ed0rtgo71nnujdxrkh4qllrf";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        const int ProjectId = 1;
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        stubBugRepository.Setup(x => x.MarkBugAsAssigned(BugId, ProjectId, UserId))
+            .Throws<NotProjectBugException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.BugNotAssociatedWithProject, badRequestObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task MarkBugStatusAsAssigned_NoErrors_ReturnsNoContent()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|ed0rtgo71nnujdxrkh4qllrf";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        const int ProjectId = 1;
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
