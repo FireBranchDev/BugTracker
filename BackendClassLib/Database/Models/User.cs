@@ -10,4 +10,7 @@ public class User : Base
     public List<Project> Projects { get; } = [];
 
     public List<UserProjectPermission> UserProjectPermissions { get; } = [];
+
+    public List<Bug> AssignedBugs { get; } = [];
+    public List<BugAssignee> BugAssignees { get; } = [];
 }

@@ -13,4 +13,8 @@ public class Bug : Base
     public Project Project { get; set; } = null!;
 
     public BugStatusType Status { get; set; }
+
+    public List<User> AssignedUsers { get; } = [];
+
+    public List<BugAssignee> BugAssignees { get; } = [];
 }

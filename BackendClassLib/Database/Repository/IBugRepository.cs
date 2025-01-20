@@ -8,4 +8,5 @@ public interface IBugRepository
     Task<List<Bug>> GetBugsAsync(int projectId, int userId);
     Task DeleteBugAsync(int projectId, int userId, int bugId);
     Task MarkBugAsAssigned(int bugId, int projectId, int userId);
+    Task AssignCollaboratorToBugAsync(int bugId, int userId, int assigneeUserId);
 }

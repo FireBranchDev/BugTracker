@@ -1,12 +1,23 @@
 ﻿using BackendClassLib.Database.Models;
 using ClassLib.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 
 namespace BackendClassLib.Database.Repository;
 
 public class BugRepository(ApplicationDbContext context) : Repository(context), IBugRepository
 {
+    public async Task AssignCollaboratorToBugAsync(int bugId, int userId, int assigneeUserId)
+    {
+        Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.UserProjectPermissions.AnyAsync(c => c.Project == bug.Project
+            && c.User == user && c.ProjectPermission.Type == ProjectPermissionType.AssignCollaboratorToBug)) throw new InsufficientPermissionToAssignCollaboratorToBug();
+        User assignee = await Context.Users.FindAsync(assigneeUserId) ?? throw new UserNotFoundException();
+        assignee.AssignedBugs.Add(bug);
+        await Context.SaveChangesAsync();
+    }
+
     public async Task CreateBugAsync(int projectId, int userId, string title, string? description)
     {
         Project foundProject = await Context.Projects.Include(c => c.Users).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
