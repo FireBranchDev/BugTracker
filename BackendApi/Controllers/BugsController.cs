@@ -203,6 +203,57 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
+    [Route("/api/bugs/{bugId}/assign/{assigneeUserId}")]
+    [HttpPost]
+    public async Task<IActionResult> AssignCollaboratorToBugAsync(int bugId, int assigneeUserId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode(403, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _bugRepository.AssignCollaboratorToBugAsync(bugId, user.Id, assigneeUserId);
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode(403, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (InsufficientPermissionToAssignCollaboratorToBug)
+        {
+            return StatusCode(403, ApiErrorMessages.InsufficientPermissionAssignCollaboratorToBug);
+        }
+        catch (UserNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.AssignCollaboratorToBugAssigneeNotFound);
+        }
+
+        return NoContent();
+    }
+
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
     {
         return new()

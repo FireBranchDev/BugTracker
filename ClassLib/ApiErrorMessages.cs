@@ -11,4 +11,6 @@ public static class ApiErrorMessages
     public const string NoRecordOfBug = "There is no record of a bug existing with this id.";
     public const string InsufficientPermissionToDeleteBug = "Insufficient permission to delete bug.";
     public const string BugNotAssociatedWithProject = "The bug is not associated with this project.";
+    public const string InsufficientPermissionAssignCollaboratorToBug = "Insufficient permission to assign a collaborator to bug.";
+    public const string AssignCollaboratorToBugAssigneeNotFound = "The assignee user id doesn't exist.";
 }

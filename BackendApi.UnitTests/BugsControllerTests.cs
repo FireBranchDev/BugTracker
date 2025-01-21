@@ -6,6 +6,7 @@ using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using System.Security.Claims;
 using Bug = BackendClassLib.Database.Models.Bug;
@@ -1129,6 +1130,386 @@ public class BugsControllerTests
 
         // Act
         IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_MissingSubClaim_ReturnsUnauthorizedWithMissingSubClaimApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        Mock<IUserRepository> stubUserRepository = new();
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        UnauthorizedObjectResult unauthorizedObjectResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, unauthorizedObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_UserNotFound_ReturnsForbiddenWithNoRecordOfUserAccountApiErrorMessage()
+    {
+        // Arrange
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        Mock<IAuthRepository> stubAuthRepository = new();
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+        
+        Mock<IUserRepository> stubUserRepository = new();
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Throws<UserNotFoundException>();
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.NoRecordOfUserAccount, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_BugNotFound_ReturnsNotFoundWithNoRecordOfBugApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+
+        Mock<IUserRepository> stubUserRepository = new();
+
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new()
+            {
+                Id = UserId,
+                AuthId = AuthId
+            }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+        stubBugRepository.Setup(x => x.AssignCollaboratorToBugAsync(BugId, UserId, AssigneeUserId))
+            .Throws<BugNotFoundException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.NoRecordOfBug, notFoundObjectResult.Value);
+    }
+
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_UserNotProjectCollaborator_ReturnsForbiddenWithUserNotProjectCollaboratorApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+
+        Mock<IUserRepository> stubUserRepository = new();
+
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new()
+            {
+                Id = UserId,
+                AuthId = AuthId
+            }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+        stubBugRepository.Setup(x => x.AssignCollaboratorToBugAsync(BugId, UserId, AssigneeUserId))
+            .Throws<UserNotProjectCollaboratorException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.UserNotProjectCollaborator, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_InsufficientPermission_ReturnsForbiddenWithInsufficientPermissionAssignCollaboratorToBugApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+
+        Mock<IUserRepository> stubUserRepository = new();
+
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new()
+            {
+                Id = UserId,
+                AuthId = AuthId
+            }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+        stubBugRepository.Setup(x => x.AssignCollaboratorToBugAsync(BugId, UserId, AssigneeUserId))
+            .Throws<InsufficientPermissionToAssignCollaboratorToBug>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.InsufficientPermissionAssignCollaboratorToBug, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_AssigneeNotFound_ReturnsNotFoundWithAssignCollaboratorToBugAssigneeNotFoundApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+
+        Mock<IUserRepository> stubUserRepository = new();
+
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new()
+            {
+                Id = UserId,
+                AuthId = AuthId
+            }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+        stubBugRepository.Setup(x => x.AssignCollaboratorToBugAsync(BugId, UserId, AssigneeUserId))
+            .Throws<UserNotFoundException>();
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
+
+        // Assert
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.AssignCollaboratorToBugAssigneeNotFound, notFoundObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task AssignCollaboratorToBugAsync_ReturnsNoContent()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+
+        const string Auth0UserId = "auth0|acixs2dw5l5jse3rhyhzkav8";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId)).Returns(Task.FromResult<Auth>(
+            new()
+            {
+                Id = AuthId,
+                UserIds = [Auth0UserId]
+            }
+        ));
+
+        Mock<IUserRepository> stubUserRepository = new();
+
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new()
+            {
+                Id = UserId,
+                AuthId = AuthId
+            }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        const int BugId = 0;
+        const int AssigneeUserId = 0;
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.AssignCollaboratorToBugAsync(BugId, AssigneeUserId);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
