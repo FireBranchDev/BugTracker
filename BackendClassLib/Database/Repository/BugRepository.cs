@@ -65,4 +65,16 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         bug.Status = BugStatusType.Assigned;
         await Context.SaveChangesAsync();
     }
+
+    public async Task<List<User>> GetAssignedCollaborators(int bugId, int userId)
+    {
+        Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
+
+        return await Context.Entry(bug)
+            .Collection(c => c.AssignedUsers)
+            .Query()
+            .ToListAsync();
+    }
 }

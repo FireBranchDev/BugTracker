@@ -1011,4 +1011,175 @@ public class BugRepositoryTests
 
         await connection.CloseAsync();
     }
+
+    [Fact]
+    public async Task GetAssignedCollaborators_BugNotFound_ThrowsBugNotFoundException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        const int BugId = 0;
+        const int UserId = 0;
+
+        // Act
+        async Task actual() => await bugRepository.GetAssignedCollaborators(BugId, UserId);
+
+        // Assert
+        await Assert.ThrowsAsync<BugNotFoundException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task GetAssignedCollaborators_UserNotFound_ThrowsUserNotFoundException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug",
+            Project = new()
+            {
+                Name = "Test Project"
+            }
+        };
+
+        await applicationDbContext.AddAsync(testBug);
+        await applicationDbContext.SaveChangesAsync();
+
+        const int UserId = 0;
+
+        // Act
+        async Task actual() => await bugRepository.GetAssignedCollaborators(testBug.Id, UserId);
+
+        // Assert
+        await Assert.ThrowsAsync<UserNotFoundException>(actual);
+    }
+
+    [Fact]
+    public async Task GetAssignedCollaborators_NotProjectCollaborator_ThrowsUserNotProjectCollaboratorException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug",
+            Project = new()
+            {
+                Name = "Test Project"
+            }
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|8wi9jjmj5od6ntq8t6u9o4l6"]
+            }
+        };
+
+        await applicationDbContext.AddRangeAsync([testBug, testUser]);
+        await applicationDbContext.SaveChangesAsync();
+
+        // Act
+        async Task actual() => await bugRepository.GetAssignedCollaborators(testBug.Id, testUser.Id);
+
+        // Assert
+        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(actual);
+    }
+
+    [Fact]
+    public async Task GetAssignedCollaborators_ReturnsAssignedCollaborators()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug",
+            Project = new()
+            {
+                Name = "Test Project"
+            }
+        };
+
+        const string TestUserDisplayName = "Test User";
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|8wi9jjmj5od6ntq8t6u9o4l6"]
+            }
+        };
+
+        testBug.Project.Users.Add(testUser);
+
+        const string TestUser2DisplayName = "Test User 2";
+        User testUser2 = new()
+        {
+            DisplayName = TestUser2DisplayName,
+            Auth = new()
+            {
+                UserIds = ["auth0|ejv6elswez5eia51meu2j0h3"]
+            }
+        };
+        testBug.Project.Users.Add(testUser2);
+
+        testBug.AssignedUsers.AddRange(testUser, testUser2);
+
+        await applicationDbContext.AddAsync(testBug);
+        await applicationDbContext.SaveChangesAsync();
+
+        // Act
+        List<User> assignedCollaborators = await bugRepository.GetAssignedCollaborators(testBug.Id, testUser.Id);
+
+        // Assert
+        Assert.Equal(2, assignedCollaborators.Count);
+        Assert.Equal(TestUserDisplayName, assignedCollaborators[0].DisplayName);
+        Assert.Equal(TestUser2DisplayName, assignedCollaborators[1].DisplayName);
+    }
 }
