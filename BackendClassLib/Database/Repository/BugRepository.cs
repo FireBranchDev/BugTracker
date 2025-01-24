@@ -77,4 +77,18 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
             .Query()
             .ToListAsync();
     }
+
+    public async Task UnassignCollaboratorAsync(int bugId, int userId, int assignedCollaboratorUserId)
+    {
+        Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Users.AnyAsync(c => c.Id == assignedCollaboratorUserId)) throw new AssignedCollaboratorUserIdNotFoundException();
+        if (!await Context.Bugs.AnyAsync(c => c.Project.Users.Any(x => x.Id == assignedCollaboratorUserId))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.UserProjectPermissions.AnyAsync(c => c.ProjectId == bug.ProjectId
+                && c.UserId == userId
+                && c.ProjectPermission.Type == ProjectPermissionType.UnassignCollaboratorFromBug))
+                    throw new InsufficientPermissionToUnassignCollaboratorFromBugException();
+        await Context.Bugs.Where(c => c.Id == bugId && c.BugAssignees.Any(c => c.UserId == assignedCollaboratorUserId)).ExecuteDeleteAsync();
+    }
 }

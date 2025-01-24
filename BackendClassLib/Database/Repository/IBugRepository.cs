@@ -10,4 +10,5 @@ public interface IBugRepository
     Task MarkBugAsAssigned(int bugId, int projectId, int userId);
     Task AssignCollaboratorToBugAsync(int bugId, int userId, int assigneeUserId);
     Task<List<User>> GetAssignedCollaborators(int bugId, int userId);
+    Task UnassignCollaboratorAsync(int bugId, int userId, int assignedCollaboratorUserId);
 }
