@@ -25,10 +25,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Database"));
 });
 
+builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IBugRepository, BugRepository>();
+builder.Services.AddScoped<BugRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
