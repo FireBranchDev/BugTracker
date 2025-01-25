@@ -89,6 +89,8 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
                 && c.UserId == userId
                 && c.ProjectPermission.Type == ProjectPermissionType.UnassignCollaboratorFromBug))
                     throw new InsufficientPermissionToUnassignCollaboratorFromBugException();
-        await Context.Bugs.Where(c => c.Id == bugId && c.BugAssignees.Any(c => c.UserId == assignedCollaboratorUserId)).ExecuteDeleteAsync();
+
+        await Context.Entry(bug).Collection(c => c.BugAssignees).Query()
+            .Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).ExecuteDeleteAsync();
     }
 }
