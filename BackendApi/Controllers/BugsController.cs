@@ -254,6 +254,61 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
+    [Route("/api/bugs/{bugId}/unassign/{collaboratorId}")]
+    [HttpPost]
+    public async Task<IActionResult> UnassignCollaboratorFromBugAsync(int bugId, int collaboratorId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode(403, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _bugRepository.UnassignCollaboratorAsync(bugId, user.Id, collaboratorId);
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode(403, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (AssignedCollaboratorUserIdNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.AssignedCollaboratorUserIdNotFound);
+        }
+        catch (InsufficientPermissionToUnassignCollaboratorFromBugException)
+        {
+            return StatusCode(403, ApiErrorMessages.InsufficientPermissionUnassignCollaboratorFromBug);
+        }
+        catch (CollaboratorNotAssignedToBugException)
+        {
+            return Ok(ApiErrorMessages.CollaboratorNotAssignedToBug);
+        }
+
+        return Ok(ApiSuccessMessages.CollaboratorUnassignedFromBug);
+    }
+
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
     {
         return new()
