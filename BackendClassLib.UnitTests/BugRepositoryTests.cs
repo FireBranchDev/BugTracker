@@ -1534,4 +1534,73 @@ public class BugRepositoryTests
 
         await connection.CloseAsync();
     }
+
+    [Fact]
+    public async Task UnassignCollaboratorFromBugAsync_CollaboratorNotAssignedToBug_ThrowsCollaboratorNotAssignedToBugException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug",
+            Project = new()
+            {
+                Name = "Test Project"
+            }
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|end567zbdwxuwdxlp4mhrsfh"]
+            }
+        };
+        testUser.Projects.Add(testBug.Project);
+
+        User testUser2 = new()
+        {
+            DisplayName = "Test User 2",
+            Auth = new()
+            {
+                UserIds = ["auth0|c2s5ft8vhbpwyxr4ziudofdd"]
+            }
+        };
+        testUser2.Projects.Add(testBug.Project);
+
+        ProjectPermission unassignCollaboratorFromBugProjectPermission = new()
+        {
+            Name = "Unassign Collaborator From Bug",
+            Description = "The permission for unassigning a collaborator from a bug.",
+            Type = ProjectPermissionType.UnassignCollaboratorFromBug
+        };
+
+        UserProjectPermission testUserProjectPermission = new()
+        {
+            User = testUser,
+            Project = testBug.Project,
+            ProjectPermission = unassignCollaboratorFromBugProjectPermission
+        };
+
+        await applicationDbContext.AddRangeAsync([testBug, testUser, testUser2, testUserProjectPermission]);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        async Task actual() => await bugRepository.UnassignCollaboratorAsync(testBug.Id, testUser.Id, testUser2.Id);
+
+        // Assert
+        await Assert.ThrowsAsync<CollaboratorNotAssignedToBugException>(actual);
+    }
 }

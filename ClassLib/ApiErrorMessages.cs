@@ -13,4 +13,7 @@ public static class ApiErrorMessages
     public const string BugNotAssociatedWithProject = "The bug is not associated with this project.";
     public const string InsufficientPermissionAssignCollaboratorToBug = "Insufficient permission to assign a collaborator to bug.";
     public const string AssignCollaboratorToBugAssigneeNotFound = "The assignee user id doesn't exist.";
+    public const string InsufficientPermissionUnassignCollaboratorFromBug = "Insufficient permission to unassign a collaborator from a bug.";
+    public const string AssignedCollaboratorUserIdNotFound = "The assigned collaborator user id could not be found.";
+    public const string CollaboratorNotAssignedToBug = "The collaborator is not assigned to the bug.";
 }
