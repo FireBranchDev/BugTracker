@@ -69,8 +69,11 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
         return await Context.Projects.Where(c => c.Users.Contains(user)).ToListAsync();
     }
 
-    public async Task<Project?> FindAsync(int projectId)
+    public async Task<Project?> FindAsync(int projectId, int userId)
     {
-        return await Task.FromResult<Project?>(null);
+        Project? project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User? user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Projects.Where(c => c.Users.Contains(user)).AnyAsync()) throw new UserNotProjectCollaboratorException();
+        return project;
     }
 }
