@@ -8,5 +8,6 @@ public interface IProjectRepository
     Task AddCollaboratorAsync(int userId, int userIdOfCollaboratorToAdd, int projectId);
     Task RemoveCollaboratorAsync(int userId, int userIdOfCollaboratorToRemove, int projectId);
     Task<List<Project>> GetAllProjectsAsync(int userId);
-    Task<Project?> FindAsync(int projectId, int userId);
+    Task<Project> FindAsync(int projectId, int userId);
+    Task<Project?> FindAsync(int projectId);
 }
