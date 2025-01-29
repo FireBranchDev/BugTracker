@@ -5,6 +5,7 @@ using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using System.Security.Claims;
 
 namespace BackendApi.Controllers;
@@ -12,11 +13,11 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProjectsController(AuthRepository authRepository, ProjectRepository projectRepository, UserRepository userRepository, IUserService userService) : ControllerBase
+public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository, IUserService userService) : ControllerBase
 {
-    readonly AuthRepository _authRepository = authRepository;
-    readonly ProjectRepository _projectRepository = projectRepository;
-    readonly UserRepository _userRepository = userRepository;
+    readonly IAuthRepository _authRepository = authRepository;
+    readonly IProjectRepository _projectRepository = projectRepository;
+    readonly IUserRepository _userRepository = userRepository;
     readonly IUserService _userService = userService;
 
     [HttpPost]
@@ -86,5 +87,59 @@ public class ProjectsController(AuthRepository authRepository, ProjectRepository
 
         List<BackendClassLib.Database.Models.Project> projects = await _projectRepository.GetAllProjectsAsync(user.Id);
         return Ok(projects);
+    }
+
+    [Route("{projectId}")]
+    [HttpGet]
+    public async Task<IActionResult> FindAsync(int projectId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode(403, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        BackendClassLib.Database.Models.Project project;
+        try
+        {
+            project = await _projectRepository.FindAsync(projectId, user.Id);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+
+        return Ok(Convert(project));
+    }
+
+    public static Project Convert(BackendClassLib.Database.Models.Project project)
+    {
+        return new()
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+        };
     }
 }
