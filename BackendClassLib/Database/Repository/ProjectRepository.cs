@@ -81,4 +81,15 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
     {
         return await Task.FromResult<Project?>(null);
     }
+
+    public async Task DeleteAsync(int projectId, int userId)
+    {
+        Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Entry(project).Collection(c => c.Users).Query().AnyAsync(x => x.Id == userId)) throw new UserNotProjectCollaboratorException();
+        if (!await Context.UserProjectPermissions.Where(c => c.User == user && c.Project == project 
+            && c.ProjectPermission.Type == ProjectPermissionType.DeleteProject).AnyAsync())
+            throw new InsufficientPermissionToDeleteProjectException();
+        await Context.Projects.Where(c => c.Id == projectId).ExecuteDeleteAsync();
+    }
 }

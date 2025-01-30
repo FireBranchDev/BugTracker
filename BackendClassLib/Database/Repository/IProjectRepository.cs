@@ -10,4 +10,5 @@ public interface IProjectRepository
     Task<List<Project>> GetAllProjectsAsync(int userId);
     Task<Project> FindAsync(int projectId, int userId);
     Task<Project?> FindAsync(int projectId);
+    Task DeleteAsync(int projectId, int userId);
 }
