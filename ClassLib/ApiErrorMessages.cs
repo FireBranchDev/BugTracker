@@ -1,4 +1,6 @@
-﻿namespace ClassLib;
+﻿using ClassLib.Exceptions;
+
+namespace ClassLib;
 
 public static class ApiErrorMessages
 {
@@ -16,4 +18,5 @@ public static class ApiErrorMessages
     public const string InsufficientPermissionUnassignCollaboratorFromBug = "Insufficient permission to unassign a collaborator from a bug.";
     public const string AssignedCollaboratorUserIdNotFound = "The assigned collaborator user id could not be found.";
     public const string CollaboratorNotAssignedToBug = "The collaborator is not assigned to the bug.";
+    public const string InsufficientPermissionToDeleteProject = "You have insufficient permission to delete the project.";
 }

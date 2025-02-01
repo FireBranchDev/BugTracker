@@ -1,5 +1,6 @@
 ﻿using BackendApi.Models;
 using BackendApi.Services;
+using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Security.Claims;
+using Project = BackendApi.Models.Project;
 
 namespace BackendApi.Controllers;
 
@@ -131,6 +133,57 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         }
 
         return Ok(Convert(project));
+    }
+
+    [Route("{id}")]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAsync(int id)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _projectRepository.DeleteAsync(id, user.Id);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (InsufficientPermissionToDeleteProjectException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToDeleteProject);
+        }
+
+        return Ok(ApiSuccessMessages.SuccessfullyDeletedProject);
     }
 
     public static Project Convert(BackendClassLib.Database.Models.Project project)
