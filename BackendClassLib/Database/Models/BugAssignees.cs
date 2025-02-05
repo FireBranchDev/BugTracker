@@ -8,5 +8,5 @@ public class BugAssignee
     public Bug Bug { get; set; } = null!;
     public User User { get; set; } = null!;
 
-    public DateTime CreatedOn { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

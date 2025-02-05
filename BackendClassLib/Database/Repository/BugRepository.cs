@@ -96,4 +96,26 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         await Context.Entry(bug).Collection(c => c.BugAssignees).Query()
             .Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).ExecuteDeleteAsync();
     }
+
+    public async Task UpdateStatusAsync(int bugId, int userId, BugStatusType bugStatus)
+    {
+        if (!await Context.Bugs.AnyAsync(x => x.Id == bugId)) throw new BugNotFoundException();
+        if (!await Context.Users.AnyAsync(x => x.Id == userId)) throw new UserNotFoundException();
+        if (!await Context.Projects.AnyAsync(x => x.Users.Any(c => c.Id == userId))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Bugs.AnyAsync(x => x.Id == bugId
+            && x.BugAssignees.Any(x => x.UserId == userId))) throw new UserNotAssignedToBugException();
+
+        // Check if user has permissions to update the status
+        int? updateStatusBugPermissionId = await Context.BugPermissions.Where(x => x.Type == BugPermissionType.UpdateStatus).Select(x => x.Id).SingleOrDefaultAsync();
+        if (updateStatusBugPermissionId is null || updateStatusBugPermissionId == 0) throw new BugPermissionNotFoundException();
+
+        bool hasPermission = await Context.BugPermissionUsers.Where(x => x.BugId == bugId)
+            .Where(x => x.UserId == userId)
+            .Where(x => x.BugPermissionId == updateStatusBugPermissionId)
+            .AnyAsync();
+
+        if (!hasPermission) throw new InsufficientPermissionToUpdateBugStatusException();
+
+        await Context.Bugs.Where(x => x.Id == bugId).ExecuteUpdateAsync(setters => setters.SetProperty(b => b.Status, bugStatus));
+    }
 }

@@ -13,4 +13,8 @@ public class User : Base
 
     public List<Bug> AssignedBugs { get; } = [];
     public List<BugAssignee> BugAssignees { get; } = [];
+
+    public List<BugPermission> BugPermissions { get; } = [];
+
+    public List<BugPermissionUser> BugPermissionUsers { get; } = [];
 }

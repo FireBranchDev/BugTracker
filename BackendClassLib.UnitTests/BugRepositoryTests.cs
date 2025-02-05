@@ -1603,4 +1603,346 @@ public class BugRepositoryTests
         // Assert
         await Assert.ThrowsAsync<CollaboratorNotAssignedToBugException>(actual);
     }
+
+    [Fact]
+    public async Task UpdateStatusAsync_BugNotInDb_ThrowsBugNotFoundException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        const int BugId = 1000;
+        const int UserId = 50;
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(BugId, UserId, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<BugNotFoundException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UserNotInDb_ThrowsUserNotFoundException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug"
+        };
+        testProject.Bugs.Add(testBug);
+
+        await applicationDbContext.AddAsync(testProject);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        const int UserId = 100;
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(testBug.Id, UserId, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<UserNotFoundException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UserIsNotAProjectCollaborator_ThrowsUserNotProjectCollaboratorException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|2szcx5mb94igxamsc54de5kb"]
+            }
+        };
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug"
+        };
+        testProject.Bugs.Add(testBug);
+
+        await applicationDbContext.AddRangeAsync([testProject, testUser]);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(testBug.Id, testUser.Id, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_CollaboratorNotAssignedToBug_ThrowsUserNotAssignedToBugException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|2szcx5mb94igxamsc54de5kb"]
+            }
+        };
+        testUser.Projects.Add(testProject);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug"
+        };
+        testProject.Bugs.Add(testBug);
+
+        await applicationDbContext.AddRangeAsync([testProject, testUser]);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(testBug.Id, testUser.Id, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<UserNotAssignedToBugException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UpdateStatusPermissionNotInDb_ThrowsBugPermissionNotFoundException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|2szcx5mb94igxamsc54de5kb"]
+            }
+        };
+        testUser.Projects.Add(testProject);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug"
+        };
+        testProject.Bugs.Add(testBug);
+        testBug.AssignedUsers.Add(testUser);
+
+        await applicationDbContext.BugPermissions.Where(x => x.Type == BugPermissionType.UpdateStatus).ExecuteDeleteAsync();
+
+        await applicationDbContext.AddRangeAsync([testProject, testUser]);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(testBug.Id, testUser.Id, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<BugPermissionNotFoundException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UserDoesNotHavePermissionToUpdateStatus_ThrowsInsufficientPermissionToUpdateBugStatusException()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|2szcx5mb94igxamsc54de5kb"]
+            }
+        };
+        testUser.Projects.Add(testProject);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug"
+        };
+        testProject.Bugs.Add(testBug);
+        testBug.AssignedUsers.Add(testUser);
+
+        await applicationDbContext.AddRangeAsync([testProject, testUser]);
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        async Task actual() => await bugRepository.UpdateStatusAsync(testBug.Id, testUser.Id, BugStatusType.Closed);
+
+        // Assert
+        await Assert.ThrowsAsync<InsufficientPermissionToUpdateBugStatusException>(actual);
+
+        await connection.CloseAsync();
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_UpdatesStatusSuccessfully()
+    {
+        // Arrange
+        SqliteConnection connection = new("Filename=:memory:");
+        await connection.OpenAsync();
+
+        DbContextOptions<ApplicationDbContext> contextOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using ApplicationDbContext applicationDbContext = new(contextOptions);
+        await applicationDbContext.Database.EnsureCreatedAsync();
+
+        Project testProject = new()
+        {
+            Name = "Test Project"
+        };
+
+        User testUser = new()
+        {
+            DisplayName = "Test User",
+            Auth = new()
+            {
+                UserIds = ["auth0|2szcx5mb94igxamsc54de5kb"]
+            }
+        };
+        testUser.Projects.Add(testProject);
+
+        Bug testBug = new()
+        {
+            Title = "Test Bug",
+            Status = BugStatusType.Resolved
+        };
+
+        testProject.Bugs.Add(testBug);
+        testBug.AssignedUsers.Add(testUser);
+
+        BugPermission updateBugStatusPermission = await applicationDbContext.BugPermissions
+            .Where(c => c.Type == BugPermissionType.UpdateStatus)
+            .SingleAsync();
+
+        await applicationDbContext.AddRangeAsync(
+        [
+            testProject, 
+            testUser
+        ]);
+
+        await applicationDbContext.SaveChangesAsync();
+
+        await applicationDbContext.AddAsync(new BugPermissionUser()
+        {
+            BugId = testBug.Id,
+            BugPermissionId = updateBugStatusPermission.Id,
+            UserId = testUser.Id
+        });
+
+        await applicationDbContext.SaveChangesAsync();
+
+        BugRepository bugRepository = new(applicationDbContext);
+
+        // Act
+        await bugRepository.UpdateStatusAsync(testBug.Id, testUser.Id, BugStatusType.Closed);
+
+        // Assert
+        bool isTestBugStatusClosed = await applicationDbContext.Bugs.Where(c => c.Id == testBug.Id)
+            .Where(c => c.Status == BugStatusType.Closed).AnyAsync();
+
+        Assert.True(isTestBugStatusClosed);
+
+        await connection.CloseAsync();
+    }   
 }

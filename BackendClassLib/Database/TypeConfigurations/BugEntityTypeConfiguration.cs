@@ -14,11 +14,5 @@ public class BugEntityTypeConfiguration : BaseEntityTypeConfiguration<Bug>
 
         builder.Property(x => x.Status)
             .IsRequired();
-
-        builder.HasMany(x => x.AssignedUsers)
-            .WithMany(x => x.AssignedBugs)
-            .UsingEntity<BugAssignee>("BugAssignees",
-                l => l.HasOne(e => e.User).WithMany(e => e.BugAssignees),
-                r => r.HasOne(e => e.Bug).WithMany(e => e.BugAssignees));
     }
 }
