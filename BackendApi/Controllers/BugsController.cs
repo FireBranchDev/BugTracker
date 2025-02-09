@@ -1,10 +1,12 @@
 ﻿using BackendApi.DTOs;
 using BackendApi.Models;
+using BackendClassLib;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
 
 namespace BackendApi.Controllers;
@@ -307,6 +309,66 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
 
         return Ok(ApiSuccessMessages.CollaboratorUnassignedFromBug);
+    }
+
+    [Route("/api/bugs/{bugId:int}/status/{bugStatus:int}")]
+    [HttpPost]
+    public async Task<IActionResult> UpdateBugStatus(int bugId, int bugStatus)
+    {
+        Claim? subClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        if (!Enum.IsDefined(typeof(BugStatusType), bugStatus))
+        {
+            return BadRequest(ApiErrorMessages.NotDefinedInBugStatusType);
+        }
+
+        try
+        {
+            await _bugRepository.UpdateStatusAsync(bugId, user.Id, (BugStatusType)bugStatus);
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (UserNotAssignedToBugException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.UserNotAssignedToBug);
+        }
+        catch (BugPermissionNotFoundException)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorMessages.BugPermissionNotFound);
+        }
+        catch (InsufficientPermissionToUpdateBugStatusException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.InsufficientPermissionToUpdateBugStatus);
+        }
+
+        return NoContent();
     }
 
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)

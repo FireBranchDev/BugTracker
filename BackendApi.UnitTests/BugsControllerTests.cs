@@ -1,13 +1,17 @@
 ﻿using BackendApi.Controllers;
 using BackendApi.DTOs;
+using BackendClassLib;
 using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
+using System.Net;
 using System.Security.Claims;
 using Bug = BackendClassLib.Database.Models.Bug;
 using Project = BackendClassLib.Database.Models.Project;
@@ -1886,5 +1890,355 @@ public class BugsControllerTests
         // Assert
         OkObjectResult okObjectResult = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(ApiErrorMessages.CollaboratorNotAssignedToBug, okObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_NotDefinedInBugStatusType_ReturnsBadRequestWithNotDefinedInBugStatusTypeApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<IBugRepository> stubBugRepository = new();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        const int BugId = 1;
+        const int BugStatus = 10;
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, BugStatus);
+
+        // Assert
+        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.NotDefinedInBugStatusType, badRequestObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_BugNotFound_ReturnsNotFoundWithNoRecordOfBugApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus))
+            .Throws<BugNotFoundException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.NoRecordOfBug, notFoundObjectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_UserNotProjectCollaborator_ReturnsForbiddenWithUserNotProjectCollaboratorApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus))
+            .Throws<UserNotProjectCollaboratorException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal((int)HttpStatusCode.Forbidden, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.UserNotProjectCollaborator, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_UserNotAssignedToBug_ReturnsForbiddenWithUserNotAssignedToBugApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus))
+            .Throws<UserNotAssignedToBugException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal((int)HttpStatusCode.Forbidden, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.UserNotAssignedToBug, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_BugPermissionNotFound_ReturnsInternalServerErrorWithBugPermissionNotFoundApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus))
+            .Throws<BugPermissionNotFoundException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal((int)HttpStatusCode.InternalServerError, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.BugPermissionNotFound, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_InsufficientPermissionToUpdateBugStatus_ReturnsForbiddenWithInsufficientPermissionToUpdateBugStatusApiErrorMessage()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus))
+            .Throws<InsufficientPermissionToUpdateBugStatusException>();
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal((int)HttpStatusCode.Forbidden, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.InsufficientPermissionToUpdateBugStatus, objectResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateBugStatus_ReturnsNoContent()
+    {
+        // Arrange
+        Mock<IAuthRepository> stubAuthRepository = new();
+        const string Auth0UserId = "auth0|h96u7aqkn0fwqjphl8f9ai0l";
+        const int AuthId = 1;
+        stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId, UserIds = [Auth0UserId] }));
+
+        Mock<IUserRepository> stubUserRepository = new();
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(AuthId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId, AuthId = 1 }));
+
+        Mock<IProjectRepository> stubProjectRepository = new();
+
+        Mock<IBugRepository> stubBugRepository = new();
+        const int BugId = 1;
+        BugStatusType bugStatus = BugStatusType.Assigned;
+        stubBugRepository.Setup(x => x.UpdateStatusAsync(BugId, UserId, bugStatus));
+
+        List<Claim> claims =
+        [
+           new(ClaimTypes.NameIdentifier, Auth0UserId)
+        ];
+        ClaimsIdentity claimsIdentity = new(claims);
+
+        DefaultHttpContext defaultHttpContext = new()
+        {
+            User = new ClaimsPrincipal(claimsIdentity)
+        };
+
+        BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object)
+        {
+            ControllerContext = new()
+            {
+                HttpContext = defaultHttpContext
+            }
+        };
+
+        // Act
+        IActionResult result = await bugsController.UpdateBugStatus(BugId, (int)bugStatus);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
     }
 }

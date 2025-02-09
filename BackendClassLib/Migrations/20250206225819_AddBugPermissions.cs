@@ -17,7 +17,7 @@ namespace BackendClassLib.Migrations
                 newName: "CreatedAt");
 
             migrationBuilder.CreateTable(
-                name: "BugPermission",
+                name: "BugPermissions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -27,11 +27,11 @@ namespace BackendClassLib.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BugPermission", x => x.Id);
+                    table.PrimaryKey("PK_BugPermissions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "BugPermissionUser",
+                name: "BugPermissionUsers",
                 columns: table => new
                 {
                     BugId = table.Column<int>(type: "int", nullable: false),
@@ -41,40 +41,35 @@ namespace BackendClassLib.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BugPermissionUser", x => new { x.BugId, x.BugPermissionId, x.UserId });
+                    table.PrimaryKey("PK_BugPermissionUsers", x => new { x.BugId, x.BugPermissionId, x.UserId });
                     table.ForeignKey(
-                        name: "FK_BugPermissionUser_BugPermission_BugPermissionId",
+                        name: "FK_BugPermissionUsers_BugPermissions_BugPermissionId",
                         column: x => x.BugPermissionId,
-                        principalTable: "BugPermission",
+                        principalTable: "BugPermissions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_BugPermissionUser_Bugs_BugId",
+                        name: "FK_BugPermissionUsers_Bugs_BugId",
                         column: x => x.BugId,
                         principalTable: "Bugs",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_BugPermissionUser_Users_UserId",
+                        name: "FK_BugPermissionUsers_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "BugPermission",
-                columns: new[] { "Id", "CreatedAt", "Type" },
-                values: new object[] { 1, new DateTime(2025, 2, 3, 3, 6, 36, 299, DateTimeKind.Utc).AddTicks(7945), 0 });
-
             migrationBuilder.CreateIndex(
-                name: "IX_BugPermissionUser_BugPermissionId",
-                table: "BugPermissionUser",
+                name: "IX_BugPermissionUsers_BugPermissionId",
+                table: "BugPermissionUsers",
                 column: "BugPermissionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BugPermissionUser_UserId",
-                table: "BugPermissionUser",
+                name: "IX_BugPermissionUsers_UserId",
+                table: "BugPermissionUsers",
                 column: "UserId");
         }
 
@@ -82,10 +77,10 @@ namespace BackendClassLib.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "BugPermissionUser");
+                name: "BugPermissionUsers");
 
             migrationBuilder.DropTable(
-                name: "BugPermission");
+                name: "BugPermissions");
 
             migrationBuilder.RenameColumn(
                 name: "CreatedAt",

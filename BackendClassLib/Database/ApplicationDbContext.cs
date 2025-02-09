@@ -1,6 +1,7 @@
 ﻿using BackendClassLib.Database.Models;
 using BackendClassLib.Database.TypeConfigurations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace BackendClassLib.Database;
 
@@ -58,17 +59,34 @@ public class ApplicationDbContext : DbContext
             .WithMany(x => x.AssignedBugs)
             .UsingEntity<BugAssignee>()
             .ToTable("BugAssignees");
+    }
 
-        modelBuilder.Entity<BugPermission>(x =>
-        {
-            x.HasData(
-                new BugPermission
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseSeeding((context, _) =>
+            {
+                if (!context.Set<BugPermission>().Where(c => c.Type == BugPermissionType.UpdateStatus).Any())
                 {
-                    Id = 1,
-                    Type = BugPermissionType.UpdateStatus,
-                    CreatedAt = DateTime.UtcNow,
+                    context.Set<BugPermission>().Add(new BugPermission
+                    {
+                        Type = BugPermissionType.UpdateStatus,
+                        CreatedAt = DateTime.UtcNow,
+                    });
+                    context.SaveChanges();
                 }
-            );
-        });
+            })
+            .UseAsyncSeeding(async (context, _, cancellationToken) =>
+            {
+                if (!await context.Set<BugPermission>().Where(c => c.Type == BugPermissionType.UpdateStatus).AnyAsync(cancellationToken))
+                {
+                    await context.Set<BugPermission>().AddAsync(new()
+                    {
+                        Type = BugPermissionType.UpdateStatus,
+                        CreatedAt = DateTime.UtcNow,
+                    }, cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
+                }
+            });
     }
 }

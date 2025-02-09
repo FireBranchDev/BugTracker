@@ -19,4 +19,8 @@ public static class ApiErrorMessages
     public const string AssignedCollaboratorUserIdNotFound = "The assigned collaborator user id could not be found.";
     public const string CollaboratorNotAssignedToBug = "The collaborator is not assigned to the bug.";
     public const string InsufficientPermissionToDeleteProject = "You have insufficient permission to delete the project.";
+    public const string NotDefinedInBugStatusType = "The number is not defined in the bug status type enum.";
+    public const string UserNotAssignedToBug = "The user is not assigned to the bug.";
+    public const string BugPermissionNotFound = "The bug permission could not be found.";
+    public const string InsufficientPermissionToUpdateBugStatus = "The insufficient permission to update bug status.";
 }

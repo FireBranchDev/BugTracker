@@ -114,15 +114,7 @@ namespace BackendClassLib.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BugPermission");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 2, 3, 3, 6, 36, 299, DateTimeKind.Utc).AddTicks(7945),
-                            Type = 0
-                        });
+                    b.ToTable("BugPermissions");
                 });
 
             modelBuilder.Entity("BackendClassLib.Database.Models.BugPermissionUser", b =>
@@ -145,7 +137,7 @@ namespace BackendClassLib.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BugPermissionUser");
+                    b.ToTable("BugPermissionUsers");
                 });
 
             modelBuilder.Entity("BackendClassLib.Database.Models.Project", b =>
