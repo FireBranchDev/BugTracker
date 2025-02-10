@@ -57,17 +57,14 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         {
             return NotFound(ApiErrorMessages.ProjectNotFound);
         }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
 
         if (!ModelState.IsValid) return ValidationProblem();
 
-        try
-        {
-            await _bugRepository.CreateBugAsync(foundProject.Id, user.Id, bug.Title, bug.Description);
-        }
-        catch (UserNotProjectCollaboratorException)
-        {
-            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
-        }
+        await _bugRepository.CreateBugAsync(foundProject.Id, user.Id, bug.Title, bug.Description);
 
         return NoContent();
     }
