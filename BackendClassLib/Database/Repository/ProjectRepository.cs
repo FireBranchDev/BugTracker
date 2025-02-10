@@ -73,7 +73,7 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
     {
         Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
         User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
-        if (!await Context.Projects.Where(c => c.Users.Contains(user)).AnyAsync()) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Entry(project).Collection(x => x.Users).Query().Where(c => c.Id == userId).AnyAsync()) throw new UserNotProjectCollaboratorException();
         return project;
     }
 
