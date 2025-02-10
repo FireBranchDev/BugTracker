@@ -71,7 +71,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
-    [HttpGet("id")]
+    [HttpGet("{projectId}")]
     public async Task<IActionResult> GetBugs(int projectId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
@@ -97,8 +97,15 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
             return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
         }
 
-        BackendClassLib.Database.Models.Project? project = await _projectRepository.FindAsync(projectId);
-        if (project is null) return BadRequest(ApiErrorMessages.ProjectNotFound);
+        BackendClassLib.Database.Models.Project project;
+        try
+        {
+            project = await _projectRepository.FindAsync(projectId, user.Id);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
 
         try
         {
