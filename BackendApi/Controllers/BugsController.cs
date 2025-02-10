@@ -7,6 +7,7 @@ using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net;
 using System.Security.Claims;
 
 namespace BackendApi.Controllers;
@@ -105,6 +106,10 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         catch (ProjectNotFoundException)
         {
             return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
 
         try
