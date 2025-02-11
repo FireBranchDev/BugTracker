@@ -15,12 +15,11 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository, IUserService userService) : ControllerBase
+public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IUserRepository _userRepository = userRepository;
-    readonly IUserService _userService = userService;
 
     [HttpPost]
     public async Task<IActionResult> Post(Project project)
@@ -30,11 +29,8 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             return ValidationProblem();
         }
 
-        if (HttpContext is not null)
-            _userService.User = HttpContext.User;
-
-        Claim? subClaim = _userService.GetSubClaim();
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -61,11 +57,8 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
     [HttpGet]
     public async Task<IActionResult> GetAllProjects()
     {
-        if (HttpContext is not null)
-            _userService.User = HttpContext.User;
-
-        Claim? subClaim = _userService.GetSubClaim();
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -95,7 +88,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
     [HttpGet]
     public async Task<IActionResult> FindAsync(int projectId)
     {
-        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;

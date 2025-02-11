@@ -26,7 +26,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     public async Task<IActionResult> CreateBug(int projectId, Bug bug)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -73,7 +73,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     public async Task<IActionResult> GetBugs(int projectId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -125,7 +125,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     public async Task<IActionResult> DeleteBug(int projectId, int bugId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -174,8 +174,8 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     [HttpPost]
     public async Task<IActionResult> MarkBugStatusAsAssigned(int projectId, int bugId)
     {
-        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         BackendClassLib.Database.Models.Auth auth;
         try

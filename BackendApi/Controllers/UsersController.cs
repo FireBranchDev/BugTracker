@@ -19,8 +19,8 @@ public class UsersController(AuthRepository authRepo, UserRepository userRepo) :
     [HttpPost]
     public async Task<IActionResult> Post(Models.User user)
     {
-        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         Auth auth;
         try
@@ -53,7 +53,7 @@ public class UsersController(AuthRepository authRepo, UserRepository userRepo) :
     public async Task<IActionResult> Get()
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return BadRequest(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
         try
         {
