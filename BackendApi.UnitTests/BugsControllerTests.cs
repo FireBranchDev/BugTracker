@@ -46,9 +46,8 @@ public class BugsControllerTests
         IActionResult result = await bugsController.CreateBug(0, bug);
 
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-        BadRequestObjectResult badRequestObjectResult = (BadRequestObjectResult)result;
-        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequestObjectResult.Value);
+        UnauthorizedObjectResult unauthorizedObjectResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, unauthorizedObjectResult.Value);
     }
 
     [Fact]
@@ -57,15 +56,18 @@ public class BugsControllerTests
         // Arrange
         Mock<IAuthRepository> stubAuthRepository = new();
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
+        const int AuthId = 1;
         stubAuthRepository.Setup(x => x.FindAsync(Auth0UserId))
-            .Returns(Task.FromResult<Auth>(new() { Id = 1 }));
+            .Returns(Task.FromResult<Auth>(new() { Id = AuthId }));
 
+        const int UserId = 1;
         Mock<IUserRepository> stubUserRepository = new();
-        stubUserRepository.Setup(x => x.FindAsync(1)).Returns(Task.FromResult<User>(new() { Id = 1 }));
+        stubUserRepository.Setup(x => x.FindAsync(AuthId)).Returns(Task.FromResult<User>(new() { Id = UserId }));
 
+        const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
-        stubProjectRepository.Setup(x => x.FindAsync(1))
-            .Returns(Task.FromResult<Project?>(new() { Id = 1 }));
+        stubProjectRepository.Setup(x => x.FindAsync(ProjectId, UserId))
+            .Returns(Task.FromResult<Project>(new() { Id = ProjectId }));
 
         Models.Bug bug = new()
         {
@@ -74,7 +76,6 @@ public class BugsControllerTests
         };
 
         Mock<IBugRepository> stubBugRepository = new();
-        stubBugRepository.Setup(x => x.CreateBugAsync(1, 1, bug.Title, bug.Description));
 
         BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object);
         DefaultHttpContext defaultHttpContext = new();
@@ -93,7 +94,7 @@ public class BugsControllerTests
         };
 
         // Act
-        IActionResult result = await bugsController.CreateBug(1, bug);
+        IActionResult result = await bugsController.CreateBug(ProjectId, bug);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
@@ -109,10 +110,16 @@ public class BugsControllerTests
             .Returns(Task.FromResult<Auth>(new() { Id = 1 }));
 
         Mock<IUserRepository> stubUserRepository = new();
-        stubUserRepository.Setup(x => x.FindAsync(1))
-            .Returns(Task.FromResult<User>(new() { Id = 1 }));
+        const int UserId = 1;
+        stubUserRepository.Setup(x => x.FindAsync(UserId))
+            .Returns(Task.FromResult<User>(new() { Id = UserId }));
 
         Mock<IProjectRepository> stubProjectRepository = new();
+
+        const int ProjectId = 0;
+        stubProjectRepository.Setup(x => x.FindAsync(ProjectId, UserId))
+            .Throws<ProjectNotFoundException>();
+
         Mock<IBugRepository> stubBugRepository = new();
 
         BugsController bugsController = new(stubAuthRepository.Object, stubUserRepository.Object, stubProjectRepository.Object, stubBugRepository.Object);
@@ -136,8 +143,10 @@ public class BugsControllerTests
             Title = "A"
         };
 
+
+
         // Act
-        IActionResult result = await bugsController.CreateBug(0, bug);
+        IActionResult result = await bugsController.CreateBug(ProjectId, bug);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);
@@ -192,7 +201,7 @@ public class BugsControllerTests
     }
 
     [Fact]
-    public async Task Post_CreateBug_ReturnsBadRequestWithUserNotProjectCollaboratorApiErrorMessage()
+    public async Task Post_CreateBug_ReturnsForbiddenWithUserNotProjectCollaboratorApiErrorMessage()
     {
         // Arrange
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
@@ -208,8 +217,8 @@ public class BugsControllerTests
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
-        stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Project?>(new() { Id = ProjectId }));
+        stubProjectRepository.Setup(x => x.FindAsync(ProjectId, UserId))
+            .Returns(Task.FromResult<Project>(new() { Id = ProjectId }));
 
         Models.Bug newBug = new()
         {
@@ -240,13 +249,13 @@ public class BugsControllerTests
         IActionResult result = await bugsController.CreateBug(ProjectId, newBug);
 
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-        BadRequestObjectResult badRequestObjectResult = (BadRequestObjectResult)result;
-        Assert.Equal(ApiErrorMessages.UserNotProjectCollaborator, badRequestObjectResult.Value);
+        ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal((int)HttpStatusCode.Forbidden, objectResult.StatusCode);
+        Assert.Equal(ApiErrorMessages.UserNotProjectCollaborator, objectResult.Value);
     }
 
     [Fact]
-    public async Task Get_Bugs_ReturnsBadRequestWithMissingSubClaimApiErrorMessage()
+    public async Task Get_Bugs_ReturnsUnauthorizedWithMissingSubClaimApiErrorMessage()
     {
         // Arrange
         Mock<IAuthRepository> stubAuthRepository = new();
@@ -267,13 +276,12 @@ public class BugsControllerTests
         IActionResult result = await bugsController.GetBugs(0);
 
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-        BadRequestObjectResult badRequestObjectResult = (BadRequestObjectResult)result;
-        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequestObjectResult.Value);
+        UnauthorizedObjectResult unauthorizedObjectResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, unauthorizedObjectResult.Value);
     }
 
     [Fact]
-    public async Task Get_Bugs_ReturnsBadRequestWithProjectNotFoundApiErrorMessage()
+    public async Task Get_Bugs_ReturnsNotFoundWithProjectNotFoundApiErrorMessage()
     {
         // Arrange
         const string Auth0UserId = "auth0|4dbi6xalpm3t9zyumde7kyd3";
@@ -289,8 +297,8 @@ public class BugsControllerTests
 
         const int ProjectId = 1;
         Mock<IProjectRepository> stubProjectRepository = new();
-        stubProjectRepository.Setup(x => x.FindAsync(ProjectId))
-            .Returns(Task.FromResult<Project?>(null));
+        stubProjectRepository.Setup(x => x.FindAsync(ProjectId, UserId))
+            .Throws<ProjectNotFoundException>();
 
         Mock<IBugRepository> stubBugRepository = new();
 
@@ -312,12 +320,11 @@ public class BugsControllerTests
         };
 
         // Act
-        IActionResult result = await bugsController.GetBugs(0);
+        IActionResult result = await bugsController.GetBugs(ProjectId);
 
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-        BadRequestObjectResult badRequestObjectResult = (BadRequestObjectResult)result;
-        Assert.Equal(ApiErrorMessages.ProjectNotFound, badRequestObjectResult.Value);
+        NotFoundObjectResult notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.ProjectNotFound, notFoundObjectResult.Value);
     }
 
     [Fact]
@@ -486,7 +493,7 @@ public class BugsControllerTests
     }
 
     [Fact]
-    public async Task Delete_Bug_ReturnsBadRequestWithMissingSubClaimApiErrorMessage()
+    public async Task Delete_Bug_ReturnsUnauthorizedWithMissingSubClaimApiErrorMessage()
     {
         // Arrange
         Mock<IAuthRepository> stubAuthRepository = new();
@@ -509,9 +516,8 @@ public class BugsControllerTests
         IActionResult result = await bugsController.DeleteBug(ProjectId, BugId);
         
         // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-        BadRequestObjectResult badRequestObjectResult = (BadRequestObjectResult)result;
-        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequestObjectResult.Value);
+        UnauthorizedObjectResult unauthorizedObjectResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, unauthorizedObjectResult.Value);
     }
 
     [Fact]
@@ -836,8 +842,8 @@ public class BugsControllerTests
         IActionResult result = await bugsController.MarkBugStatusAsAssigned(ProjectId, BugId);
 
         // Assert
-        BadRequestObjectResult badRequestObjectResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal(ApiErrorMessages.MissingSubClaim, badRequestObjectResult.Value);
+        UnauthorizedObjectResult unauthorizedObjectResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal(ApiErrorMessages.MissingSubClaim, unauthorizedObjectResult.Value);
     }
 
     [Fact]

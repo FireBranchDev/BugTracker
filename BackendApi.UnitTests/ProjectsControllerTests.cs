@@ -21,9 +21,8 @@ public class ProjectsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         Mock<IUserRepository> stubUserRepository = new();
         Mock<IProjectRepository> stubProjectRepository = new();
-        Mock<IUserService> stubUserService = new();
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -56,7 +55,6 @@ public class ProjectsControllerTests
             .Throws<UserNotFoundException>();
 
         Mock<IProjectRepository> stubProjectRepository = new();
-        Mock<IUserService> stubUserService = new();
 
         List<Claim> claims =
         [
@@ -68,7 +66,7 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -118,8 +116,7 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        Mock<IUserService> stubUserService = new();
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -165,9 +162,8 @@ public class ProjectsControllerTests
         {
             User = new ClaimsPrincipal(claimsIdentity)
         };
-
-        Mock<IUserService> stubUserService = new();
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -220,8 +216,7 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        Mock<IUserService> stubUserService = new();
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -248,9 +243,8 @@ public class ProjectsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         Mock<IProjectRepository> stubProjectRepository = new();
         Mock<IUserRepository> stubUserRepository = new();
-        Mock<IUserService> stubUserService = new();
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -284,8 +278,6 @@ public class ProjectsControllerTests
         
         stubUserRepository.Setup(x => x.FindAsync(AuthId))
             .Throws<UserNotFoundException>();
-        
-        Mock<IUserService> stubUserService = new();
 
         List<Claim> claims =
         [
@@ -293,7 +285,7 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -340,15 +332,13 @@ public class ProjectsControllerTests
                 AuthId = AuthId,
             }));
 
-        Mock<IUserService> stubUserService = new();
-
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, Auth0UserId)
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -392,15 +382,13 @@ public class ProjectsControllerTests
         stubProjectRepository.Setup(x => x.DeleteAsync(TestProjectId, TestUserId))
             .Throws<UserNotProjectCollaboratorException>();
 
-        Mock<IUserService> stubUserService = new();
-
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, TestAuth0UserId)
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -444,15 +432,13 @@ public class ProjectsControllerTests
         stubProjectRepository.Setup(x => x.DeleteAsync(TestProjectId, TestUserId))
             .Throws<InsufficientPermissionToDeleteProjectException>();
 
-        Mock<IUserService> stubUserService = new();
-
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, TestAuth0UserId)
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
@@ -495,15 +481,13 @@ public class ProjectsControllerTests
         Mock<IProjectRepository> stubProjectRepository = new();
         stubProjectRepository.Setup(x => x.DeleteAsync(TestProjectId, TestUserId));
 
-        Mock<IUserService> stubUserService = new();
-
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, TestAuth0UserId)
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubUserService.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
         {
             ControllerContext = new()
             {
