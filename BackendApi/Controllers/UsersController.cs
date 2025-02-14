@@ -35,7 +35,7 @@ public class UsersController(AuthRepository authRepo, UserRepository userRepo) :
         try
         {
             await _userRepo.FindAsync(auth.Id);
-            return BadRequest(ApiErrorMessages.UserAccountAlreadyCreated);
+            return Conflict(ApiErrorMessages.UserAccountAlreadyCreated);
         }
         catch
         {
