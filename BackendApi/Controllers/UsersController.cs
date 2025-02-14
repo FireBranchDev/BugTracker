@@ -63,11 +63,11 @@ public class UsersController(AuthRepository authRepo, UserRepository userRepo) :
         }
         catch (AuthUserIdNotFoundException)
         {
-            return BadRequest(ApiErrorMessages.NoRecordOfAuth0UserId);
+            return NotFound(ApiErrorMessages.NoRecordOfAuth0UserId);
         }
         catch (UserNotFoundException)
         {
-            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+            return NotFound(ApiErrorMessages.NoRecordOfUserAccount);
         }
     }
 }
