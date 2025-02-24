@@ -1,20 +1,23 @@
-﻿namespace BackendClassLibTests;
+﻿using BackendClassLib.Database;
+
+namespace BackendClassLibTests;
 
 public class ProjectRepositoryTest : BaseDbCollection
 {
     [Fact]
     public async Task AddAsync()
     {
-        using ApplicationDbContext context = DatabaseFixture.CreateContext();
-        await context.Database.BeginTransactionAsync();
+        using ApplicationDbContext applicationDbContext = DatabaseFixture.CreateContext();
+        await applicationDbContext.Database.BeginTransactionAsync();
 
-        ProjectRepository repository = new(context);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const string Name = "Project One";
         const string Description = "Generic description";
         int authId = 1000;
 
-        await Assert.ThrowsAsync<AuthNotFoundException>(async () => await repository.AddAsync(Name, Description, authId));
+        await Assert.ThrowsAsync<AuthNotFoundException>(async () => await projectRepository.AddAsync(Name, Description, authId));
 
         const string UserId1 = "auth0|w5u554mylojeaqzufm36bpgv";
         const string UserId2 = "auth0|bmxbr8lmfwscoc7yeom5lqx6";
@@ -24,11 +27,11 @@ public class ProjectRepositoryTest : BaseDbCollection
             CreatedOn = DateTime.UtcNow,
             UpdatedOn = DateTime.UtcNow
         };
-        await context.AddAsync(auth);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(auth);
+        await applicationDbContext.SaveChangesAsync();
         authId = auth.Id;
 
-        await Assert.ThrowsAsync<UserNotFoundException>(async () => await repository.AddAsync(Name, Description, authId));
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.AddAsync(Name, Description, authId));
 
         User user = new()
         {
@@ -37,32 +40,33 @@ public class ProjectRepositoryTest : BaseDbCollection
             UpdatedOn = DateTime.UtcNow,
             AuthId = authId
         };
-        await context.AddAsync(user);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(user);
+        await applicationDbContext.SaveChangesAsync();
 
-        int insertedProjectId = await repository.AddAsync(Name, Description, authId);
-        bool isInsertedProjectSaved = await context.Projects.AnyAsync(c => c.Id == insertedProjectId);
+        int insertedProjectId = await projectRepository.AddAsync(Name, Description, authId);
+        bool isInsertedProjectSaved = await applicationDbContext.Projects.AnyAsync(c => c.Id == insertedProjectId);
         Assert.True(isInsertedProjectSaved);
 
-        bool isUserInProject = await context.Projects.AnyAsync(c => c.Id == insertedProjectId && c.Users.Contains(user));
+        bool isUserInProject = await applicationDbContext.Projects.AnyAsync(c => c.Id == insertedProjectId && c.Users.Contains(user));
         Assert.True(isUserInProject);
 
-        context.ChangeTracker.Clear();
+        applicationDbContext.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task AddCollaboratorAsync()
     {
-        using ApplicationDbContext context = DatabaseFixture.CreateContext();
-        await context.Database.BeginTransactionAsync();
+        using ApplicationDbContext applicationDbContext = DatabaseFixture.CreateContext();
+        await applicationDbContext.Database.BeginTransactionAsync();
 
-        ProjectRepository repository = new(context);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int UserIdNotInDb = 1000;
         const int CollaboratorUserIdNotInDb = 1000;
         const int ProjectIdNotInDb = 1000;
 
-        await Assert.ThrowsAsync<UserNotFoundException>(async () => await repository.AddCollaboratorAsync(UserIdNotInDb, CollaboratorUserIdNotInDb, ProjectIdNotInDb));
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.AddCollaboratorAsync(UserIdNotInDb, CollaboratorUserIdNotInDb, ProjectIdNotInDb));
 
         const string Auth1UserId = "auth0|cqc1q4rhv38htvclsst76lsr";
         Auth auth1 = new()
@@ -77,9 +81,9 @@ public class ProjectRepositoryTest : BaseDbCollection
                 UpdatedOn = DateTime.UtcNow,
             }
         };
-        await context.AddAsync(auth1);
-        await context.SaveChangesAsync();
-        await Assert.ThrowsAsync<UserNotFoundException>(async () => await repository.AddCollaboratorAsync(auth1.User.Id, CollaboratorUserIdNotInDb, ProjectIdNotInDb));
+        await applicationDbContext.AddAsync(auth1);
+        await applicationDbContext.SaveChangesAsync();
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.AddCollaboratorAsync(auth1.User.Id, CollaboratorUserIdNotInDb, ProjectIdNotInDb));
 
         const string Auth2UserId = "auth0|44ovthw8qabskgsay3h5vxtd";
         Auth auth2 = new()
@@ -94,9 +98,9 @@ public class ProjectRepositoryTest : BaseDbCollection
                 UpdatedOn = DateTime.UtcNow,
             }
         };
-        await context.AddAsync(auth2);
-        await context.SaveChangesAsync();
-        await Assert.ThrowsAsync<ProjectNotFoundException>(async () => await repository.AddCollaboratorAsync(auth1.User.Id, auth2.User.Id, ProjectIdNotInDb));
+        await applicationDbContext.AddAsync(auth2);
+        await applicationDbContext.SaveChangesAsync();
+        await Assert.ThrowsAsync<ProjectNotFoundException>(async () => await projectRepository.AddCollaboratorAsync(auth1.User.Id, auth2.User.Id, ProjectIdNotInDb));
 
         Project testProject = new()
         {
@@ -107,15 +111,15 @@ public class ProjectRepositoryTest : BaseDbCollection
         };
         testProject.Users.Add(auth1.User);
 
-        ProjectPermission addCollaboratorPermission = await context.ProjectPermissions.FirstAsync(x => x.Type == BackendClassLib.ProjectPermissionType.AddCollaborator);
+        ProjectPermission addCollaboratorPermission = await applicationDbContext.ProjectPermissions.FirstAsync(x => x.Type == BackendClassLib.ProjectPermissionType.AddCollaborator);
         testProject.UserProjectPermissions.Add(new()
         {
             User = auth1.User,
             Project = testProject,
             ProjectPermission = addCollaboratorPermission
         });
-        await context.AddAsync(testProject);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(testProject);
+        await applicationDbContext.SaveChangesAsync();
 
         const string Auth3UserId = "8uth9fz7yrfnrevlh3k1yq0x";
         Auth auth3 = new()
@@ -130,32 +134,33 @@ public class ProjectRepositoryTest : BaseDbCollection
                 UpdatedOn = DateTime.UtcNow,
             }
         };
-        await context.AddAsync(auth3);
-        await context.SaveChangesAsync();
-        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await repository.AddCollaboratorAsync(auth3.User.Id, auth2.User.Id, testProject.Id));
+        await applicationDbContext.AddAsync(auth3);
+        await applicationDbContext.SaveChangesAsync();
+        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await projectRepository.AddCollaboratorAsync(auth3.User.Id, auth2.User.Id, testProject.Id));
 
-        await repository.AddCollaboratorAsync(auth1.User.Id, auth2.User.Id, testProject.Id);
-        testProject = await context.Projects.Include(x => x.Users).FirstAsync(c => c.Id == testProject.Id);
+        await projectRepository.AddCollaboratorAsync(auth1.User.Id, auth2.User.Id, testProject.Id);
+        testProject = await applicationDbContext.Projects.Include(x => x.Users).FirstAsync(c => c.Id == testProject.Id);
         Assert.Contains(auth2.User, testProject.Users);
 
-        await Assert.ThrowsAsync<InsufficientPermissionToAddCollaboratorException>(async () => await repository.AddCollaboratorAsync(auth2.User.Id, auth3.User.Id, testProject.Id));
+        await Assert.ThrowsAsync<InsufficientPermissionToAddCollaboratorException>(async () => await projectRepository.AddCollaboratorAsync(auth2.User.Id, auth3.User.Id, testProject.Id));
 
-        context.ChangeTracker.Clear();
+        applicationDbContext.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task RemoveCollaboratorAsync()
     {
-        using ApplicationDbContext context = DatabaseFixture.CreateContext();
-        await context.Database.BeginTransactionAsync();
+        using ApplicationDbContext applicationDbContext = DatabaseFixture.CreateContext();
+        await applicationDbContext.Database.BeginTransactionAsync();
 
-        ProjectRepository repository = new(context);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int UserIdNotInDb = 1000;
         const int CollaboratorToRemoveUserIdNotInDb = 1000;
         const int ProjectIdNotInDb = 1000;
 
-        await Assert.ThrowsAsync<UserNotFoundException>(async () => await repository.RemoveCollaboratorAsync(UserIdNotInDb, CollaboratorToRemoveUserIdNotInDb, ProjectIdNotInDb));
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.RemoveCollaboratorAsync(UserIdNotInDb, CollaboratorToRemoveUserIdNotInDb, ProjectIdNotInDb));
 
         Auth testUser1 = new()
         {
@@ -165,10 +170,10 @@ public class ProjectRepositoryTest : BaseDbCollection
                 DisplayName = "Test User 1"
             }
         };
-        await context.AddAsync(testUser1);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(testUser1);
+        await applicationDbContext.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<UserNotFoundException>(async () => await repository.RemoveCollaboratorAsync(UserIdNotInDb, CollaboratorToRemoveUserIdNotInDb, ProjectIdNotInDb));
+        await Assert.ThrowsAsync<UserNotFoundException>(async () => await projectRepository.RemoveCollaboratorAsync(UserIdNotInDb, CollaboratorToRemoveUserIdNotInDb, ProjectIdNotInDb));
 
         Auth testUser2 = new()
         {
@@ -178,56 +183,57 @@ public class ProjectRepositoryTest : BaseDbCollection
                 DisplayName = "Test User 2"
             }
         };
-        await context.AddAsync(testUser2);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(testUser2);
+        await applicationDbContext.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<ProjectNotFoundException>(async () => await repository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, ProjectIdNotInDb));
+        await Assert.ThrowsAsync<ProjectNotFoundException>(async () => await projectRepository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, ProjectIdNotInDb));
 
         Project testProject = new()
         {
             Name = "Test Project",
             Description = "Test Project's description"
         };
-        await context.AddAsync(testProject);
-        await context.SaveChangesAsync();
+        await applicationDbContext.AddAsync(testProject);
+        await applicationDbContext.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await repository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
+        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await projectRepository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
 
         testProject.Users.Add(testUser1.User);
-        await context.SaveChangesAsync();
+        await applicationDbContext.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await repository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
+        await Assert.ThrowsAsync<UserNotProjectCollaboratorException>(async () => await projectRepository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
 
         testProject.Users.Add(testUser2.User);
-        await context.SaveChangesAsync();
+        await applicationDbContext.SaveChangesAsync();
 
-        await Assert.ThrowsAsync<InsufficientPermissionToRemoveCollaboratorException>(async () => await repository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
+        await Assert.ThrowsAsync<InsufficientPermissionToRemoveCollaboratorException>(async () => await projectRepository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id));
 
-        int permissionId = await context.ProjectPermissions.Where(c => c.Type == BackendClassLib.ProjectPermissionType.RemoveCollaborator)
+        int permissionId = await applicationDbContext.ProjectPermissions.Where(c => c.Type == BackendClassLib.ProjectPermissionType.RemoveCollaborator)
             .Select(c => c.Id).SingleAsync();
 
-        await context.UserProjectPermissions.AddAsync(new()
+        await applicationDbContext.UserProjectPermissions.AddAsync(new()
         {
             UserId = testUser1.User.Id,
             ProjectId = testProject.Id,
             ProjectPermissionId = permissionId
         });
-        await context.SaveChangesAsync();
+        await applicationDbContext.SaveChangesAsync();
 
-        await repository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id);
-        bool isTestUser2Removed = await context.Projects.AnyAsync(c => c.Id == testProject.Id && c.Users.Any(c => c.Id == testUser2.User.Id));
+        await projectRepository.RemoveCollaboratorAsync(testUser1.User.Id, testUser2.User.Id, testProject.Id);
+        bool isTestUser2Removed = await applicationDbContext.Projects.AnyAsync(c => c.Id == testProject.Id && c.Users.Any(c => c.Id == testUser2.User.Id));
         Assert.False(isTestUser2Removed);
 
-        context.ChangeTracker.Clear();
+        applicationDbContext.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task GetAllProjectsAsync()
     {
-        using ApplicationDbContext dbContext = DatabaseFixture.CreateContext();
-        await dbContext.Database.BeginTransactionAsync();
+        using ApplicationDbContext applicationDbContext = DatabaseFixture.CreateContext();
+        await applicationDbContext.Database.BeginTransactionAsync();
 
-        ProjectRepository projectRepository = new(dbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int UserIdNotInDb = 1000;
 
@@ -241,8 +247,8 @@ public class ProjectRepositoryTest : BaseDbCollection
                 DisplayName = "Testing User 1"
             }
         };
-        await dbContext.AddAsync(auth);
-        await dbContext.SaveChangesAsync();
+        await applicationDbContext.AddAsync(auth);
+        await applicationDbContext.SaveChangesAsync();
 
         Project testProject1 = new()
         {
@@ -262,12 +268,12 @@ public class ProjectRepositoryTest : BaseDbCollection
         };
         testProject3.Users.Add(auth.User);
 
-        await dbContext.AddRangeAsync([testProject1, testProject2, testProject3]);
-        await dbContext.SaveChangesAsync();
+        await applicationDbContext.AddRangeAsync([testProject1, testProject2, testProject3]);
+        await applicationDbContext.SaveChangesAsync();
 
         List<Project> testingUser1Projects = await projectRepository.GetAllProjectsAsync(auth.User.Id);
         Assert.Equal(3, testingUser1Projects.Count);
 
-        dbContext.ChangeTracker.Clear();
+        applicationDbContext.ChangeTracker.Clear();
     }
 }

@@ -23,7 +23,8 @@ public class ProjectRepositoryTests
         using ApplicationDbContext applicationDbContext = new(contextOptions);
         await applicationDbContext.Database.EnsureCreatedAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int ProjectId = 0;
         const int UserId = 0;
@@ -58,7 +59,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddAsync(testProject);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int UserId = 0;
 
@@ -100,7 +102,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddRangeAsync([testProject, testUser]);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         // Act
         async Task actual() => await projectRepository.FindAsync(testProject.Id, testUser.Id);
@@ -141,7 +144,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddRangeAsync([testProject, testUser]);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         // Act
         Project? foundProject = await projectRepository.FindAsync(testProject.Id, testUser.Id);
@@ -167,7 +171,8 @@ public class ProjectRepositoryTests
         using ApplicationDbContext applicationDbContext = new(contextOptions);
         await applicationDbContext.Database.EnsureCreatedAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int ProjectId = 0;
         const int UserId = 0;
@@ -202,7 +207,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddAsync(testProject);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         const int UserId = 0;
 
@@ -243,7 +249,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddRangeAsync([testProject, testUser]);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         // Act
         async Task actual() => await projectRepository.DeleteAsync(testProject.Id, testUser.Id);
@@ -283,7 +290,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddRangeAsync([testProject, testUser]);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         // Act
         async Task actual() => await projectRepository.DeleteAsync(testProject.Id, testUser.Id);
@@ -336,7 +344,8 @@ public class ProjectRepositoryTests
         await applicationDbContext.AddRangeAsync([testProject, testUser, userProjectPermissionToDeleteProject]);
         await applicationDbContext.SaveChangesAsync();
 
-        ProjectRepository projectRepository = new(applicationDbContext);
+        IProjectPermissionRepository projectPermissionRepository = new ProjectPermissionRepository(applicationDbContext);
+        ProjectRepository projectRepository = new(applicationDbContext, projectPermissionRepository);
 
         // Act
         await projectRepository.DeleteAsync(testProject.Id, testUser.Id);

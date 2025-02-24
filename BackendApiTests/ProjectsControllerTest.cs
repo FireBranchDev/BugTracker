@@ -32,11 +32,12 @@ public class ProjectsControllerTest(DatabaseFixture databaseFixture)
         await dbContext.Database.BeginTransactionAsync();
 
         AuthRepository authRepo = new(dbContext);
-        ProjectRepository projectRepo = new(dbContext);
+        IProjectPermissionRepository projectPermissionRepo = new ProjectPermissionRepository(dbContext);
+        ProjectRepository projectRepo = new(dbContext, projectPermissionRepo);
         UserRepository userRepo = new(dbContext);
         MyFakeUserService userService = new();
 
-        ProjectsController projectsController = new(authRepo, projectRepo, userRepo, userService);
+        ProjectsController projectsController = new(authRepo, projectRepo, userRepo, projectPermissionRepo);
 
         string auth0UserId = "auth0|h8g6antdzgykodou4s98t0xr";
         Claim subClaim = new(ClaimTypes.NameIdentifier, auth0UserId);
@@ -81,7 +82,7 @@ public class ProjectsControllerTest(DatabaseFixture databaseFixture)
         UserRepository userRepo = new(dbContext);
         MyFakeUserService userService = new();
 
-        ProjectsController projectsController = new(authRepo, projectRepo, userRepo, userService);
+        ProjectsController projectsController = new(authRepo, projectRepo, userRepo);
 
         IActionResult result = await projectsController.GetAllProjects();
         Assert.IsType<BadRequestObjectResult>(result);

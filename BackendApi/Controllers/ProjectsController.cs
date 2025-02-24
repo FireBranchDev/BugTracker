@@ -1,5 +1,4 @@
-﻿using BackendApi.Models;
-using BackendApi.Services;
+﻿using BackendClassLib;
 using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
@@ -15,11 +14,12 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository) : ControllerBase
+public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository, ILogger<ProjectsController> logger) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IUserRepository _userRepository = userRepository;
+    readonly ILogger<ProjectsController> _logger = logger;
 
     [HttpPost]
     public async Task<IActionResult> Post(Project project)
@@ -32,7 +32,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
-        BackendClassLib.Database.Models.Auth auth;
+        Auth auth;
         try
         {
             auth = await _authRepository.FindAsync(subClaim.Value);
@@ -49,6 +49,22 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         catch (UserNotFoundException)
         {
             return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+        }
+        catch (ProjectPermissionNotFoundException ex)
+        {
+            if (ex.Data.Contains(nameof(ProjectPermissionType) + "s"))
+            {
+                foreach (ProjectPermissionType projectPermissionType in (List<ProjectPermissionType>)ex.Data[nameof(ProjectPermissionType) + "s"]!)
+                {
+                    _logger.LogError(ex, "LogError: the {projectPermissionType} project permission type was not found in the database.", projectPermissionType);
+                }
+            }
+            else
+            {
+                _logger.LogError(ex, "LogError: A project permission type was not found in the database.");
+            }
+            _logger.LogError("LogError: {ApiErrorMessages.CreatingNewProjectUnavailable}", ApiErrorMessages.CreatingNewProjectUnavailable);
+            return StatusCode((int)HttpStatusCode.InternalServerError, ApiErrorMessages.CreatingNewProjectUnavailable);
         }
 
         return NoContent();

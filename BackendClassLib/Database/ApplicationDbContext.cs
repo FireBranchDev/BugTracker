@@ -73,8 +73,81 @@ public class ApplicationDbContext : DbContext
                         Type = BugPermissionType.UpdateStatus,
                         CreatedAt = DateTime.UtcNow,
                     });
-                    context.SaveChanges();
                 }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.AddCollaborator).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Add Collaborator",
+                        Description = "A project's permission to allow for adding a collaborator.",
+                        Type = ProjectPermissionType.AddCollaborator,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.RemoveCollaborator).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Remove Collaborator",
+                        Description = "A project's permission to allow for removing a collaborator.",
+                        Type = ProjectPermissionType.RemoveCollaborator,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.DeleteBug).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Delete Bug",
+                        Description = "A project's permission to allow for deleting a bug.",
+                        Type = ProjectPermissionType.DeleteBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.AssignCollaboratorToBug).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Assign Collaborator to Bug",
+                        Description = "A project's permission to allow for assigning a collaborator to a bug.",
+                        Type = ProjectPermissionType.AssignCollaboratorToBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.UnassignCollaboratorFromBug).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Unassign Collaborator from Bug",
+                        Description = "A project's permission to allow for unassigning a collaborator from a bug.",
+                        Type = ProjectPermissionType.UnassignCollaboratorFromBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.DeleteProject).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Delete Project",
+                        Description = "A project's permission to allow for deleting a project.",
+                        Type = ProjectPermissionType.DeleteProject,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
+                context.SaveChanges();
             })
             .UseAsyncSeeding(async (context, _, cancellationToken) =>
             {
@@ -85,7 +158,78 @@ public class ApplicationDbContext : DbContext
                         Type = BugPermissionType.UpdateStatus,
                         CreatedAt = DateTime.UtcNow,
                     }, cancellationToken);
-                    await context.SaveChangesAsync(cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.AddCollaborator).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new()
+                    {
+                        Name = "Add Collaborator",
+                        Description = "A project's permission to allow for adding a collaborator.",
+                        Type = ProjectPermissionType.AddCollaborator,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.RemoveCollaborator).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new()
+                    {
+                        Name = "Remove Collaborator",
+                        Description = "A project's permission to allow for removing a collaborator.",
+                        Type = ProjectPermissionType.RemoveCollaborator,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.DeleteBug).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new ProjectPermission
+                    {
+                        Name = "Delete Bug",
+                        Description = "A project's permission to allow for deleting a bug.",
+                        Type = ProjectPermissionType.DeleteBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.AssignCollaboratorToBug).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new ProjectPermission
+                    {
+                        Name = "Assign Collaborator to Bug",
+                        Description = "A project's permission to allow for assigning a collaborator to a bug.",
+                        Type = ProjectPermissionType.AssignCollaboratorToBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.UnassignCollaboratorFromBug).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new ProjectPermission
+                    {
+                        Name = "Unassign Collaborator from Bug",
+                        Description = "A project's permission to allow for unassigning a collaborator from a bug.",
+                        Type = ProjectPermissionType.UnassignCollaboratorFromBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.DeleteProject).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new ProjectPermission
+                    {
+                        Name = "Delete Project",
+                        Description = "A project's permission to allow for deleting a project.",
+                        Type = ProjectPermissionType.DeleteProject,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
                 }
             });
     }

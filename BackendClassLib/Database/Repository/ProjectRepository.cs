@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BackendClassLib.Database.Repository;
 
-public class ProjectRepository(ApplicationDbContext context) : Repository(context), IProjectRepository
+public class ProjectRepository(ApplicationDbContext context, IProjectPermissionRepository projectPermissionRepository) : Repository(context), IProjectRepository
 {
+    readonly IProjectPermissionRepository _projectPermissionRepository = projectPermissionRepository;
+
     public async Task<int> AddAsync(string name, string? description, int authId)
     {
         if (!await Context.Auths.AnyAsync(x => x.Id == authId)) throw new AuthNotFoundException();
@@ -20,9 +22,21 @@ public class ProjectRepository(ApplicationDbContext context) : Repository(contex
             CreatedOn = DateTime.UtcNow,
             UpdatedOn = DateTime.UtcNow,
         };
-
         project.Users.Add(user);
-        await Context.Projects.AddAsync(project);
+
+        List<UserProjectPermission> userProjectPermissions = [];
+        foreach (ProjectPermission projectPermission in await _projectPermissionRepository.GetAllAsync())
+        {
+            userProjectPermissions.Add(new()
+            {
+                User = user,
+                Project = project,
+                ProjectPermission = projectPermission
+            });
+        }
+        await Context.UserProjectPermissions.AddRangeAsync(userProjectPermissions);
+        
+        await Context.AddAsync(project);
         await Context.SaveChangesAsync();
 
         return project.Id;

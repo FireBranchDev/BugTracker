@@ -6,8 +6,10 @@ using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Claims;
 
 namespace BackendApi.UnitTests;
@@ -21,8 +23,9 @@ public class ProjectsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         Mock<IUserRepository> stubUserRepository = new();
         Mock<IProjectRepository> stubProjectRepository = new();
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -66,7 +69,8 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -116,7 +120,8 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -162,8 +167,9 @@ public class ProjectsControllerTests
         {
             User = new ClaimsPrincipal(claimsIdentity)
         };
-        
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -216,7 +222,8 @@ public class ProjectsControllerTests
             User = new ClaimsPrincipal(claimsIdentity)
         };
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -243,8 +250,9 @@ public class ProjectsControllerTests
         Mock<IAuthRepository> stubAuthRepository = new();
         Mock<IProjectRepository> stubProjectRepository = new();
         Mock<IUserRepository> stubUserRepository = new();
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -285,7 +293,8 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -338,7 +347,8 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -388,7 +398,8 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -438,7 +449,8 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {
@@ -487,7 +499,8 @@ public class ProjectsControllerTests
         ];
         ClaimsIdentity claimsIdentity = new(claims);
 
-        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object)
+        Mock<ILogger<ProjectsController>> stubLoggerProjectsController = new();
+        ProjectsController projectsController = new(stubAuthRepository.Object, stubProjectRepository.Object, stubUserRepository.Object, stubLoggerProjectsController.Object)
         {
             ControllerContext = new()
             {

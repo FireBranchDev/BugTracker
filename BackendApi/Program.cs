@@ -3,6 +3,7 @@ using BackendClassLib.Database;
 using BackendClassLib.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IBugRepository, BugRepository>();
 builder.Services.AddScoped<BugRepository>();
+builder.Services.AddScoped<IProjectPermissionRepository, ProjectPermissionRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
@@ -40,6 +42,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//Add support to logging with SERILOG
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 var app = builder.Build();
 
@@ -51,6 +57,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+//Add support to logging request with SERILOG
+app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();

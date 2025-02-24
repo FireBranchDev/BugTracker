@@ -23,4 +23,5 @@ public static class ApiErrorMessages
     public const string UserNotAssignedToBug = "The user is not assigned to the bug.";
     public const string BugPermissionNotFound = "The bug permission could not be found.";
     public const string InsufficientPermissionToUpdateBugStatus = "The insufficient permission to update bug status.";
+    public const string CreatingNewProjectUnavailable = "Creating a new project is currently unavailable.";
 }
