@@ -22,6 +22,8 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Project foundProject = await Context.Projects.Include(c => c.Users).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
         if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
+        if (!await Context.UserProjectPermissions.AnyAsync(c => c.ProjectId == projectId
+            && c.UserId == userId && c.ProjectPermission.Type == ProjectPermissionType.CreateBug)) throw new InsufficientPermissionToCreateBugException();
         Bug bug = new()
         {
             Title = title

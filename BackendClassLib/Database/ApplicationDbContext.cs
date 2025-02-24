@@ -2,6 +2,7 @@
 using BackendClassLib.Database.TypeConfigurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Threading;
 
 namespace BackendClassLib.Database;
 
@@ -147,6 +148,18 @@ public class ApplicationDbContext : DbContext
                     });
                 }
 
+                if (context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).Any())
+                {
+                    context.Set<ProjectPermission>().Add(new ProjectPermission
+                    {
+                        Name = "Create Bug",
+                        Description = "A project's permission to allow for creating a bug.",
+                        Type = ProjectPermissionType.CreateBug,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    });
+                }
+
                 context.SaveChanges();
             })
             .UseAsyncSeeding(async (context, _, cancellationToken) =>
@@ -227,6 +240,18 @@ public class ApplicationDbContext : DbContext
                         Name = "Delete Project",
                         Description = "A project's permission to allow for deleting a project.",
                         Type = ProjectPermissionType.DeleteProject,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                    }, cancellationToken);
+                }
+
+                if (!await context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).AnyAsync(cancellationToken))
+                {
+                    await context.Set<ProjectPermission>().AddAsync(new ProjectPermission
+                    {
+                        Name = "Create Bug",
+                        Description = "A project's permission to allow for creating a bug.",
+                        Type = ProjectPermissionType.CreateBug,
                         CreatedOn = DateTime.UtcNow,
                         UpdatedOn = DateTime.UtcNow,
                     }, cancellationToken);

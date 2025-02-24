@@ -72,6 +72,10 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         {
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
+        catch (InsufficientPermissionToCreateBugException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToCreateBug);
+        }
 
         return NoContent();
     }

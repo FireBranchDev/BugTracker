@@ -1,6 +1,4 @@
-﻿using ClassLib.Exceptions;
-
-namespace ClassLib;
+﻿namespace ClassLib;
 
 public static class ApiErrorMessages
 {
@@ -24,4 +22,5 @@ public static class ApiErrorMessages
     public const string BugPermissionNotFound = "The bug permission could not be found.";
     public const string InsufficientPermissionToUpdateBugStatus = "The insufficient permission to update bug status.";
     public const string CreatingNewProjectUnavailable = "Creating a new project is currently unavailable.";
+    public const string InsufficientPermissionToCreateBug = "The user has insufficient permission to create a bug.";
 }
