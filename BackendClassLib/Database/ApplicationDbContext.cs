@@ -1,8 +1,7 @@
 ﻿using BackendClassLib.Database.Models;
+using BackendClassLib.Database.Models.Types;
 using BackendClassLib.Database.TypeConfigurations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.Threading;
 
 namespace BackendClassLib.Database;
 
@@ -17,6 +16,8 @@ public class ApplicationDbContext : DbContext
     public virtual DbSet<BugPermission> BugPermissions { get; set; } = null!;
 
     public virtual DbSet<BugPermissionUser> BugPermissionUsers { get; set; } = null!;
+
+    public virtual DbSet<DefaultProjectRole> DefaultProjectRoles { get; set; } = null!;
 
     public ApplicationDbContext()
     {
@@ -160,6 +161,8 @@ public class ApplicationDbContext : DbContext
                     });
                 }
 
+                InitialiseDefaultProjectRoles(context);
+
                 context.SaveChanges();
             })
             .UseAsyncSeeding(async (context, _, cancellationToken) =>
@@ -256,6 +259,56 @@ public class ApplicationDbContext : DbContext
                         UpdatedOn = DateTime.UtcNow,
                     }, cancellationToken);
                 }
+
+                await InitialiseDefaultProjectRolesAsync(context, cancellationToken);
+
+                await context.SaveChangesAsync(cancellationToken);
             });
+    }
+
+    static void InitialiseDefaultProjectRoles(DbContext context)
+    {
+        if (!context.Set<DefaultProjectRole>().Where(c => c.Type == DefaultProjectRoleType.None).Any())
+        {
+            context.Set<DefaultProjectRole>().Add(new()
+            {
+                Name = "None",
+                CreatedAt = DateTime.UtcNow,
+                Type = DefaultProjectRoleType.None,
+            });
+        }
+
+        if (!context.Set<DefaultProjectRole>().Where(c => c.Type == DefaultProjectRoleType.Owner).Any())
+        {
+            context.Set<DefaultProjectRole>().Add(new()
+            {
+                Name = "Owner",
+                CreatedAt = DateTime.UtcNow,
+                Type = DefaultProjectRoleType.Owner,
+            });
+        }
+    }
+
+    static async Task InitialiseDefaultProjectRolesAsync(DbContext context, CancellationToken cancellationToken)
+    {
+        if (!await context.Set<DefaultProjectRole>().Where(c => c.Type == DefaultProjectRoleType.None).AnyAsync(cancellationToken))
+        {
+            await context.Set<DefaultProjectRole>().AddAsync(new DefaultProjectRole
+            {
+                Name = "None",
+                CreatedAt = DateTime.UtcNow,
+                Type = DefaultProjectRoleType.None,
+            }, cancellationToken);
+        }
+
+        if (!await context.Set<DefaultProjectRole>().Where(c => c.Type == DefaultProjectRoleType.Owner).AnyAsync(cancellationToken))
+        {
+            await context.Set<DefaultProjectRole>().AddAsync(new DefaultProjectRole
+            {
+                Name = "Owner",
+                CreatedAt = DateTime.UtcNow,
+                Type = DefaultProjectRoleType.Owner,
+            }, cancellationToken);
+        }
     }
 }
