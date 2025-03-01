@@ -2,6 +2,7 @@
 using BackendClassLib.Database.Models.Types;
 using BackendClassLib.Database.TypeConfigurations;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace BackendClassLib.Database;
 
@@ -61,6 +62,11 @@ public class ApplicationDbContext : DbContext
             .WithMany(x => x.AssignedBugs)
             .UsingEntity<BugAssignee>()
             .ToTable("BugAssignees");
+
+        modelBuilder.Entity<DefaultProjectRole>()
+            .HasMany(x => x.ProjectPermissions)
+            .WithMany(x => x.DefaultProjectRoles)
+            .UsingEntity("DefaultProjectRoleProjectPermissions");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -149,7 +155,7 @@ public class ApplicationDbContext : DbContext
                     });
                 }
 
-                if (context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).Any())
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).Any())
                 {
                     context.Set<ProjectPermission>().Add(new ProjectPermission
                     {
@@ -260,9 +266,9 @@ public class ApplicationDbContext : DbContext
                     }, cancellationToken);
                 }
 
-                await InitialiseDefaultProjectRolesAsync(context, cancellationToken);
-
                 await context.SaveChangesAsync(cancellationToken);
+
+                await InitialiseDefaultProjectRolesAsync(context, cancellationToken);
             });
     }
 
@@ -310,5 +316,7 @@ public class ApplicationDbContext : DbContext
                 Type = DefaultProjectRoleType.Owner,
             }, cancellationToken);
         }
+
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -11,4 +11,6 @@ public class ProjectPermission : Base
     public ProjectPermissionType Type { get; set; }
 
     public List<UserProjectPermission> UserProjectPermissions { get; } = [];
+
+    public List<DefaultProjectRole> DefaultProjectRoles { get; } = [];
 }
