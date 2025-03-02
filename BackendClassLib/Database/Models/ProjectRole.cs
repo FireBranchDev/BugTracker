@@ -10,4 +10,6 @@ public class ProjectRole : Role
     public ProjectRoleType Type { get; set; }
 
     public List<Project> Projects { get; } = [];
+
+    public List<ProjectProjectRoleUser> ProjectProjectRoleUsers { get; } = [];
 }
