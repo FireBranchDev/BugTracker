@@ -1,14 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BackendClassLib.Database.AbstractModels;
+using BackendClassLib.Database.Models.Types;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BackendClassLib.Database.Models;
 
-public abstract class ProjectRole
+[Table("ProjectRoles")]
+public class ProjectRole : Role
 {
-    public int Id { get; set; }
+    public ProjectRoleType Type { get; set; }
 
-    [Required]
-    [MaxLength(128)]
-    public string Name { get; set; } = null!;
-
-    public DateTime CreatedAt { get; set; }
+    public List<Project> Projects { get; } = [];
 }
