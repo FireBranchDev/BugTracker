@@ -140,30 +140,6 @@ namespace BackendClassLib.Migrations
                     b.ToTable("BugPermissionUsers");
                 });
 
-            modelBuilder.Entity("BackendClassLib.Database.Models.DefaultProjectRole", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DefaultProjectRoles");
-                });
-
             modelBuilder.Entity("BackendClassLib.Database.Models.Project", b =>
                 {
                     b.Property<int>("Id")
