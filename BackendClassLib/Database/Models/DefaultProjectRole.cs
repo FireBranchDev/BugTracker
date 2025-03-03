@@ -1,9 +1,8 @@
-﻿using BackendClassLib.Database.AbstractModels;
-using BackendClassLib.Database.Models.Types;
+﻿using BackendClassLib.Database.Models.Types;
 
 namespace BackendClassLib.Database.Models;
 
-public class DefaultProjectRole : Role
+public class DefaultProjectRole : ProjectRole
 {
     public DefaultProjectRoleType Type { get; set; }
 
