@@ -227,37 +227,6 @@ namespace BackendClassLib.Migrations
                     b.ToTable("ProjectPermissions");
                 });
 
-            modelBuilder.Entity("BackendClassLib.Database.Models.ProjectProjectRoleUser", b =>
-                {
-                    b.Property<int>("ProjectsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectRolesId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UsersId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectRoleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProjectsId", "ProjectRolesId", "UsersId");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("ProjectRoleId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ProjectProjectRoleUsers");
-                });
-
             modelBuilder.Entity("BackendClassLib.Database.Models.ProjectRole", b =>
                 {
                     b.Property<int>("Id")
@@ -434,33 +403,6 @@ namespace BackendClassLib.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BackendClassLib.Database.Models.ProjectProjectRoleUser", b =>
-                {
-                    b.HasOne("BackendClassLib.Database.Models.Project", "Project")
-                        .WithMany("ProjectProjectRoleUsers")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendClassLib.Database.Models.ProjectRole", "ProjectRole")
-                        .WithMany("ProjectProjectRoleUsers")
-                        .HasForeignKey("ProjectRoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendClassLib.Database.Models.User", "User")
-                        .WithMany("ProjectProjectRoleUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-
-                    b.Navigation("ProjectRole");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BackendClassLib.Database.Models.User", b =>
                 {
                     b.HasOne("BackendClassLib.Database.Models.Auth", "Auth")
@@ -565,8 +507,6 @@ namespace BackendClassLib.Migrations
                 {
                     b.Navigation("Bugs");
 
-                    b.Navigation("ProjectProjectRoleUsers");
-
                     b.Navigation("UserProjectPermissions");
                 });
 
@@ -575,18 +515,11 @@ namespace BackendClassLib.Migrations
                     b.Navigation("UserProjectPermissions");
                 });
 
-            modelBuilder.Entity("BackendClassLib.Database.Models.ProjectRole", b =>
-                {
-                    b.Navigation("ProjectProjectRoleUsers");
-                });
-
             modelBuilder.Entity("BackendClassLib.Database.Models.User", b =>
                 {
                     b.Navigation("BugAssignees");
 
                     b.Navigation("BugPermissionUsers");
-
-                    b.Navigation("ProjectProjectRoleUsers");
 
                     b.Navigation("UserProjectPermissions");
                 });

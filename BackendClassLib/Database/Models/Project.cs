@@ -17,6 +17,4 @@ public class Project : Base
     public List<UserProjectPermission> UserProjectPermissions { get; } = [];
 
     public List<ProjectRole> ProjectRoles { get; } = [];
-
-    public List<ProjectProjectRoleUser> ProjectProjectRoleUsers { get; } = [];
 }
