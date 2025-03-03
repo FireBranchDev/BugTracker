@@ -227,30 +227,6 @@ namespace BackendClassLib.Migrations
                     b.ToTable("ProjectPermissions");
                 });
 
-            modelBuilder.Entity("BackendClassLib.Database.Models.ProjectRole", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ProjectRoles");
-                });
-
             modelBuilder.Entity("BackendClassLib.Database.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -320,21 +296,6 @@ namespace BackendClassLib.Migrations
                     b.HasIndex("ProjectPermissionsId");
 
                     b.ToTable("DefaultProjectRoleProjectPermissions");
-                });
-
-            modelBuilder.Entity("ProjectProjectRoles", b =>
-                {
-                    b.Property<int>("ProjectRolesId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectsId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProjectRolesId", "ProjectsId");
-
-                    b.HasIndex("ProjectsId");
-
-                    b.ToTable("ProjectProjectRoles");
                 });
 
             modelBuilder.Entity("ProjectUser", b =>
@@ -452,21 +413,6 @@ namespace BackendClassLib.Migrations
                     b.HasOne("BackendClassLib.Database.Models.ProjectPermission", null)
                         .WithMany()
                         .HasForeignKey("ProjectPermissionsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ProjectProjectRoles", b =>
-                {
-                    b.HasOne("BackendClassLib.Database.Models.ProjectRole", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectRolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendClassLib.Database.Models.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

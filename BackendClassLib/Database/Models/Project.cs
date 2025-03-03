@@ -15,6 +15,4 @@ public class Project : Base
     public List<Bug> Bugs { get; } = [];
 
     public List<UserProjectPermission> UserProjectPermissions { get; } = [];
-
-    public List<ProjectRole> ProjectRoles { get; } = [];
 }

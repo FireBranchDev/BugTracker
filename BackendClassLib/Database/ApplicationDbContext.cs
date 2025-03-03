@@ -67,11 +67,6 @@ public class ApplicationDbContext : DbContext
             .HasMany(x => x.ProjectPermissions)
             .WithMany(x => x.DefaultProjectRoles)
             .UsingEntity("DefaultProjectRoleProjectPermissions");
-
-        modelBuilder.Entity<Project>()
-            .HasMany(x => x.ProjectRoles)
-            .WithMany(x => x.Projects)
-            .UsingEntity("ProjectProjectRoles");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
