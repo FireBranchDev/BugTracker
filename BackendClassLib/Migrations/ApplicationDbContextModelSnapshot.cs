@@ -283,21 +283,6 @@ namespace BackendClassLib.Migrations
                     b.ToTable("UserProjectPermissions");
                 });
 
-            modelBuilder.Entity("DefaultProjectRoleProjectPermissions", b =>
-                {
-                    b.Property<int>("DefaultProjectRolesId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProjectPermissionsId")
-                        .HasColumnType("int");
-
-                    b.HasKey("DefaultProjectRolesId", "ProjectPermissionsId");
-
-                    b.HasIndex("ProjectPermissionsId");
-
-                    b.ToTable("DefaultProjectRoleProjectPermissions");
-                });
-
             modelBuilder.Entity("ProjectUser", b =>
                 {
                     b.Property<int>("ProjectsId")
@@ -400,21 +385,6 @@ namespace BackendClassLib.Migrations
                     b.Navigation("ProjectPermission");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DefaultProjectRoleProjectPermissions", b =>
-                {
-                    b.HasOne("BackendClassLib.Database.Models.DefaultProjectRole", null)
-                        .WithMany()
-                        .HasForeignKey("DefaultProjectRolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendClassLib.Database.Models.ProjectPermission", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectPermissionsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("ProjectUser", b =>

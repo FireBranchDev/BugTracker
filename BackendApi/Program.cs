@@ -1,6 +1,5 @@
 using BackendApi.Services;
 using BackendClassLib.Database;
-using BackendClassLib.Database.DataSeeding;
 using BackendClassLib.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -49,17 +48,6 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 var app = builder.Build();
-
-using (IServiceScope serviceScope = app.Services.CreateScope())
-{
-    IServiceProvider services = serviceScope.ServiceProvider;
-
-    ILogger<DatabaseSeeding> logger = services.GetRequiredService<ILogger<DatabaseSeeding>>();
-    ApplicationDbContext applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
-    DatabaseSeeding databaseSeeding = new(logger, applicationDbContext);
-
-    await databaseSeeding.InitialiseOwnerDefaultProjectRoleProjectPermissions();
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
