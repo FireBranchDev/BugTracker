@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendClassLib.UnitTests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendApi.UnitTests", "BackendApi.UnitTests\BackendApi.UnitTests.csproj", "{AB945CC0-BC4A-40B9-B422-187C8B915C02}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InitialiseDatabaseConsoleApp", "InitialiseDatabaseConsoleApp\InitialiseDatabaseConsoleApp.csproj", "{0B42D47B-F141-4577-9723-0D51A579373B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{AB945CC0-BC4A-40B9-B422-187C8B915C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB945CC0-BC4A-40B9-B422-187C8B915C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB945CC0-BC4A-40B9-B422-187C8B915C02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B42D47B-F141-4577-9723-0D51A579373B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B42D47B-F141-4577-9723-0D51A579373B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B42D47B-F141-4577-9723-0D51A579373B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B42D47B-F141-4577-9723-0D51A579373B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
