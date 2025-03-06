@@ -10,9 +10,9 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
         User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        Project? project = await Context.Projects.Where(c => c.Bugs.Contains(bug)).FirstOrDefaultAsync() ?? throw new ProjectNotFoundException();
         if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
-        if (!await Context.UserProjectPermissions.AnyAsync(c => c.ProjectId == bug.ProjectId
-            && c.User == user && c.ProjectPermission.Type == ProjectPermissionType.AssignCollaboratorToBug)) throw new InsufficientPermissionToAssignCollaboratorToBug();
+        if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, project.Id, userId, ProjectPermissionType.AssignCollaboratorToBug)) throw new InsufficientPermissionToAssignCollaboratorToBug();
         User assignee = await Context.Users.FindAsync(assigneeUserId) ?? throw new UserNotFoundException();
         assignee.AssignedBugs.Add(bug);
         await Context.SaveChangesAsync();
@@ -22,8 +22,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Project foundProject = await Context.Projects.Include(c => c.Users).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
         if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
-        if (!await Context.UserProjectPermissions.AnyAsync(c => c.ProjectId == projectId
-            && c.UserId == userId && c.ProjectPermission.Type == ProjectPermissionType.CreateBug)) throw new InsufficientPermissionToCreateBugException();
+        if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, projectId, userId, ProjectPermissionType.CreateBug)) throw new InsufficientPermissionToCreateBugException();
         Bug bug = new()
         {
             Title = title
@@ -42,7 +41,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
         if (!await Context.Bugs.AnyAsync(x => x.Id == bugId)) throw new BugNotFoundException();
         if (!await Context.Bugs.AnyAsync(c => c.Id == bugId && c.ProjectId == projectId)) throw new NotProjectBugException();
-        if (!await Context.UserProjectPermissions.AnyAsync(x => x.ProjectId == projectId && x.UserId == userId && x.ProjectPermission.Type == ProjectPermissionType.DeleteBug))
+        if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, projectId, userId, ProjectPermissionType.DeleteBug))
             throw new InsufficientPermissionToDeleteBugException();
         Bug bug = await Context.Bugs.Where(c => c.Id == bugId).FirstAsync();
         Context.Bugs.Remove(bug);
@@ -87,10 +86,9 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
         if (!await Context.Users.AnyAsync(c => c.Id == assignedCollaboratorUserId)) throw new AssignedCollaboratorUserIdNotFoundException();
         if (!await Context.Bugs.AnyAsync(c => c.Project.Users.Any(x => x.Id == assignedCollaboratorUserId))) throw new UserNotProjectCollaboratorException();
-        if (!await Context.UserProjectPermissions.AnyAsync(c => c.ProjectId == bug.ProjectId
-                && c.UserId == userId
-                && c.ProjectPermission.Type == ProjectPermissionType.UnassignCollaboratorFromBug))
-                    throw new InsufficientPermissionToUnassignCollaboratorFromBugException();
+        Project? project = await Context.Projects.Where(c => c.Bugs.Contains(bug)).FirstOrDefaultAsync() ?? throw new ProjectNotFoundException();
+        if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, project.Id, userId, ProjectPermissionType.UnassignCollaboratorFromBug))
+            throw new InsufficientPermissionToUnassignCollaboratorFromBugException();
 
         if (!await Context.Entry(bug).Collection(c => c.BugAssignees).Query().Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).AnyAsync())
             throw new CollaboratorNotAssignedToBugException();
