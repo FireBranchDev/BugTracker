@@ -11,4 +11,5 @@ public interface IProjectRepository
     Task<Project> FindAsync(int projectId, int userId);
     Task<Project?> FindAsync(int projectId);
     Task DeleteAsync(int projectId, int userId);
+    Task<bool> HasPermissionToPerformActionAsync(int projectId, int userId, ProjectPermissionType projectPermissionType);
 }

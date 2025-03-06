@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BackendClassLib.Database.Repository;
 
+#pragma warning disable CS9113 // Parameter is unread.
 public class ProjectRepository(ApplicationDbContext context, IProjectPermissionRepository projectPermissionRepository) : Repository(context), IProjectRepository
+#pragma warning restore CS9113 // Parameter is unread.
 {
-    readonly IProjectPermissionRepository _projectPermissionRepository = projectPermissionRepository;
-
     public async Task<int> AddAsync(string name, string? description, int authId)
     {
         if (!await Context.Auths.AnyAsync(x => x.Id == authId)) throw new AuthNotFoundException();
@@ -22,21 +22,25 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
             CreatedOn = DateTime.UtcNow,
             UpdatedOn = DateTime.UtcNow,
         };
-        project.Users.Add(user);
+        await Context.AddAsync(project);
 
-        List<UserProjectPermission> userProjectPermissions = [];
-        foreach (ProjectPermission projectPermission in await _projectPermissionRepository.GetAllAsync())
+        project.Users.Add(user);
+        
+        foreach (DefaultProjectRole defaultProjectRole in await Context.DefaultProjectRoles.ToListAsync())
+            project.DefaultProjectRoles.Add(defaultProjectRole);
+
+        DefaultProjectRole? owner = await Context.DefaultProjectRoles.Where(c => c.Name == "Owner").FirstOrDefaultAsync();
+
+        if (owner is not null)
         {
-            userProjectPermissions.Add(new()
+            project.DefaultProjectRoleProjectUsers.Add(new()
             {
-                User = user,
+                DefaultProjectRole = owner,
                 Project = project,
-                ProjectPermission = projectPermission
+                User = user
             });
         }
-        await Context.UserProjectPermissions.AddRangeAsync(userProjectPermissions);
-        
-        await Context.AddAsync(project);
+
         await Context.SaveChangesAsync();
 
         return project.Id;
@@ -101,9 +105,28 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
         User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
         if (!await Context.Entry(project).Collection(c => c.Users).Query().AnyAsync(x => x.Id == userId)) throw new UserNotProjectCollaboratorException();
-        if (!await Context.UserProjectPermissions.Where(c => c.User == user && c.Project == project 
-            && c.ProjectPermission.Type == ProjectPermissionType.DeleteProject).AnyAsync())
+        if (!await HasPermissionToPerformActionAsync(Context, projectId, userId, ProjectPermissionType.DeleteProject))
             throw new InsufficientPermissionToDeleteProjectException();
         await Context.Projects.Where(c => c.Id == projectId).ExecuteDeleteAsync();
+    }
+
+    public static async Task<bool> HasPermissionToPerformActionAsync(ApplicationDbContext context, int projectId, int userId, ProjectPermissionType projectPermissionType)
+    {
+        Project project = await context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User user = await context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await context.Entry(project).Collection(c => c.Users).Query().Where(x => x.Id == userId).AnyAsync()) throw new UserNotProjectCollaboratorException();
+        if (!await context.ProjectPermissions.Where(c => c.Type == projectPermissionType).AnyAsync()) throw new ProjectPermissionNotFoundException();
+        return await context.Entry(project).Collection(c => c.DefaultProjectRoleProjectUsers).Query()
+            .Where(x => x.ProjectId == projectId && x.UserId == userId && x.DefaultProjectRole.ProjectPermissions.Where(c => c.Type == projectPermissionType).Any()).AnyAsync();
+    }
+
+    public async Task<bool> HasPermissionToPerformActionAsync(int projectId, int userId, ProjectPermissionType projectPermissionType)
+    {
+        Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Entry(project).Collection(c => c.Users).Query().Where(x => x.Id == userId).AnyAsync()) throw new UserNotProjectCollaboratorException();
+        if (!await Context.ProjectPermissions.Where(c => c.Type == projectPermissionType).AnyAsync()) throw new ProjectPermissionNotFoundException();
+        return await Context.Entry(project).Collection(c => c.DefaultProjectRoleProjectUsers).Query()
+            .Where(x => x.ProjectId == projectId && x.UserId == userId && x.DefaultProjectRole.ProjectPermissions.Where(c => c.Type == projectPermissionType).Any()).AnyAsync();
     }
 }
