@@ -1,4 +1,5 @@
 using BackendApi.Services;
+using BackendApi.Testing;
 using BackendClassLib.Database;
 using BackendClassLib.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +26,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("Database"));
 });
+builder.Services.AddScoped<DbInitializer>();
 
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -54,6 +56,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseItToSeedSqlServer();
 }
 
 app.UseHttpsRedirection();
