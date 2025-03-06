@@ -3,6 +3,7 @@ using BackendClassLib.Database.TypeConfigurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace BackendClassLib.Database;
 
@@ -15,8 +16,8 @@ public class ApplicationDbContext : DbContext
     public virtual DbSet<UserProjectPermission> UserProjectPermissions { get; set; } = null!;
     public virtual DbSet<Bug> Bugs { get; set; } = null!;
     public virtual DbSet<BugPermission> BugPermissions { get; set; } = null!;
-
     public virtual DbSet<BugPermissionUser> BugPermissionUsers { get; set; } = null!;
+    public DbSet<DefaultProjectRole> DefaultProjectRoles { get; set; } = null!;
 
     public ApplicationDbContext()
     {
@@ -60,6 +61,27 @@ public class ApplicationDbContext : DbContext
             .WithMany(x => x.AssignedBugs)
             .UsingEntity<BugAssignee>()
             .ToTable("BugAssignees");
+
+        modelBuilder.Entity<DefaultProjectRoleProjectUser>()
+            .ToTable("DefaultProjectRoleProjectUsers");
+
+        modelBuilder.Entity<DefaultProjectRoleProjectUser>()
+            .HasKey(x => new { x.DefaultProjectRoleId, x.ProjectId, x.UserId });
+
+        modelBuilder.Entity<DefaultProjectRoleProjectUser>()
+            .HasOne(c => c.DefaultProjectRole)
+            .WithMany(y => y.DefaultProjectRoleProjectUsers)
+            .HasForeignKey(c => c.DefaultProjectRoleId);
+
+        modelBuilder.Entity<DefaultProjectRoleProjectUser>()
+            .HasOne(c => c.Project)
+            .WithMany(y => y.DefaultProjectRoleProjectUsers)
+            .HasForeignKey(c => c.ProjectId);
+
+        modelBuilder.Entity<DefaultProjectRoleProjectUser>()
+            .HasOne(c => c.User)
+            .WithMany(y => y.DefaultProjectRoleProjectUsers)
+            .HasForeignKey(c => c.UserId);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -148,7 +170,7 @@ public class ApplicationDbContext : DbContext
                     });
                 }
 
-                if (context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).Any())
+                if (!context.Set<ProjectPermission>().Where(c => c.Type == ProjectPermissionType.CreateBug).Any())
                 {
                     context.Set<ProjectPermission>().Add(new ProjectPermission
                     {
@@ -159,6 +181,21 @@ public class ApplicationDbContext : DbContext
                         UpdatedOn = DateTime.UtcNow,
                     });
                 }
+
+                //if (!context.Set<DefaultProjectRole>().Where(c => c.Name == "Owner").Any())
+                //{
+                //    DefaultProjectRole owner = new()
+                //    {
+                //        Name = "Owner",
+                //        CreatedAt = DateTime.UtcNow,
+                //        UpdatedAt = DateTime.UtcNow,
+                //    };
+
+                //    foreach (ProjectPermission projectPermission in context.Entry<ProjectPermission>().Collection())
+
+                //    context.Set<DefaultProjectRole>().Add(owner);
+
+                //}
 
                 context.SaveChanges();
             })
