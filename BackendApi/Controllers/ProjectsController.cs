@@ -1,5 +1,4 @@
-﻿using BackendClassLib;
-using BackendClassLib.Database.Models;
+﻿using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
@@ -14,12 +13,11 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository, ILogger<ProjectsController> logger) : ControllerBase
+public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IUserRepository _userRepository = userRepository;
-    readonly ILogger<ProjectsController> _logger = logger;
 
     [HttpPost]
     public async Task<IActionResult> Post(Project project)
@@ -50,22 +48,6 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         {
             return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
         }
-        catch (ProjectPermissionNotFoundException ex)
-        {
-            if (ex.Data.Contains(nameof(ProjectPermissionType) + "s"))
-            {
-                foreach (ProjectPermissionType projectPermissionType in (List<ProjectPermissionType>)ex.Data[nameof(ProjectPermissionType) + "s"]!)
-                {
-                    _logger.LogError(ex, "LogError: the {projectPermissionType} project permission type was not found in the database.", projectPermissionType);
-                }
-            }
-            else
-            {
-                _logger.LogError(ex, "LogError: A project permission type was not found in the database.");
-            }
-            _logger.LogError("LogError: {ApiErrorMessages.CreatingNewProjectUnavailable}", ApiErrorMessages.CreatingNewProjectUnavailable);
-            return StatusCode((int)HttpStatusCode.InternalServerError, ApiErrorMessages.CreatingNewProjectUnavailable);
-        }
 
         return NoContent();
     }
@@ -76,7 +58,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
-        BackendClassLib.Database.Models.Auth auth;
+        Auth auth;
         try
         {
             auth = await _authRepository.FindAsync(subClaim.Value);
@@ -86,7 +68,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             auth = await _authRepository.InsertAsync(subClaim.Value);
         }
 
-        BackendClassLib.Database.Models.User user;
+        User user;
         try
         {
             user = await _userRepository.FindAsync(auth.Id);
@@ -97,7 +79,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         }
 
         List<BackendClassLib.Database.Models.Project> projects = await _projectRepository.GetAllProjectsAsync(user.Id);
-        return Ok(projects);
+        return Ok(projects.Select(ConvertToModel).ToList());
     }
 
     [Route("{projectId}")]
@@ -107,7 +89,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
-        BackendClassLib.Database.Models.Auth auth;
+        Auth auth;
         try
         {
             auth = await _authRepository.FindAsync(subClaim.Value);
@@ -117,7 +99,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             auth = await _authRepository.InsertAsync(subClaim.Value);
         }
 
-        BackendClassLib.Database.Models.User user;
+        User user;
         try
         {
             user = await _userRepository.FindAsync(auth.Id);
@@ -141,12 +123,12 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
 
-        return Ok(Convert(project));
+        return Ok(ConvertToModel(project));
     }
 
-    [Route("{id}")]
+    [Route("{projectId}")]
     [HttpDelete]
-    public async Task<IActionResult> DeleteAsync(int id)
+    public async Task<IActionResult> DeleteAsync(int projectId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
@@ -161,7 +143,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             auth = await _authRepository.InsertAsync(subClaim.Value);
         }
 
-        BackendClassLib.Database.Models.User user;
+        User user;
         try
         {
             user = await _userRepository.FindAsync(auth.Id);
@@ -173,7 +155,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
 
         try
         {
-            await _projectRepository.DeleteAsync(id, user.Id);
+            await _projectRepository.DeleteAsync(projectId, user.Id);
         }
         catch (ProjectNotFoundException)
         {
@@ -195,7 +177,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         return Ok(ApiSuccessMessages.SuccessfullyDeletedProject);
     }
 
-    public static Project Convert(BackendClassLib.Database.Models.Project project)
+    public static Project ConvertToModel(BackendClassLib.Database.Models.Project project)
     {
         return new()
         {
