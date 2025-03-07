@@ -12,4 +12,5 @@ public interface IBugRepository
     Task<List<User>> GetAssignedCollaborators(int bugId, int userId);
     Task UnassignCollaboratorAsync(int bugId, int userId, int assignedCollaboratorUserId);
     Task UpdateStatusAsync(int bugId, int userId, BugStatusType bugStatus);
+    Task<int> GetBugProjectIdAsync(int bugId);
 }

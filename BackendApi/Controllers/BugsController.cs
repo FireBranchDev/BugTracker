@@ -6,7 +6,6 @@ using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Net;
 using System.Security.Claims;
 
@@ -25,6 +24,8 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     [HttpPost("{projectId}")]
     public async Task<IActionResult> CreateBug(int projectId, Bug bug)
     {
+        if (!ModelState.IsValid) return ValidationProblem();
+
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
 
@@ -62,8 +63,6 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
 
-        if (!ModelState.IsValid) return ValidationProblem();
-        
         try
         {
             await _bugRepository.CreateBugAsync(foundProject.Id, user.Id, bug.Title, bug.Description);
@@ -103,7 +102,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
         }
 
         BackendClassLib.Database.Models.Project project;
@@ -131,59 +130,9 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
     }
 
-    [Route("/api/projects/{projectId}/bugs/{bugId}")]
+    [Route("/api/bugs/{bugId}")]
     [HttpDelete]
-    public async Task<IActionResult> DeleteBug(int projectId, int bugId)
-    {
-        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
-
-        BackendClassLib.Database.Models.Auth auth;
-        try
-        {
-            auth = await _authRepository.FindAsync(subClaim.Value);
-        }
-        catch(AuthUserIdNotFoundException)
-        {
-            auth = await _authRepository.InsertAsync(subClaim.Value);
-        }
-
-        BackendClassLib.Database.Models.User user;
-        try
-        {
-            user = await _userRepository.FindAsync(auth.Id);
-        }
-        catch (UserNotFoundException)
-        {
-            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
-        }
-
-        BackendClassLib.Database.Models.Project? project = await _projectRepository.FindAsync(projectId);
-        if (project is null) return NotFound(ApiErrorMessages.ProjectNotFound);
-
-        try
-        {
-            await _bugRepository.DeleteBugAsync(project.Id, user.Id, bugId);
-        }
-        catch (UserNotProjectCollaboratorException)
-        {
-            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
-        }
-        catch (BugNotFoundException)
-        {
-            return NotFound(ApiErrorMessages.NoRecordOfBug);
-        }
-        catch (InsufficientPermissionToDeleteBugException)
-        {
-            return BadRequest(ApiErrorMessages.InsufficientPermissionToDeleteBug);
-        }
-
-        return NoContent();
-    }
-
-    [Route("/api/projects/{projectId}/bugs/{bugId}/status/assigned")]
-    [HttpPost]
-    public async Task<IActionResult> MarkBugStatusAsAssigned(int projectId, int bugId)
+    public async Task<IActionResult> DeleteBug(int bugId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
@@ -205,28 +154,34 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return StatusCode(403, ApiErrorMessages.NoRecordOfUserAccount);
+            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
         }
 
+        int projectId;
         try
         {
-            await _bugRepository.MarkBugAsAssigned(bugId, projectId, user.Id);
+            projectId = await _bugRepository.GetBugProjectIdAsync(bugId);
         }
         catch (BugNotFoundException)
         {
             return NotFound(ApiErrorMessages.NoRecordOfBug);
         }
-        catch (ProjectNotFoundException)
+
+        try
         {
-            return NotFound(ApiErrorMessages.ProjectNotFound);
+            await _bugRepository.DeleteBugAsync(projectId, user.Id, bugId);
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
-        catch (NotProjectBugException)
+        catch (BugNotFoundException)
         {
-            return BadRequest(ApiErrorMessages.BugNotAssociatedWithProject);
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (InsufficientPermissionToDeleteBugException)
+        {
+            return BadRequest(ApiErrorMessages.InsufficientPermissionToDeleteBug);
         }
 
         return NoContent();

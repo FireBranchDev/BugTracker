@@ -99,9 +99,11 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
 
     public async Task UpdateStatusAsync(int bugId, int userId, BugStatusType bugStatus)
     {
+        Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
         if (!await Context.Bugs.AnyAsync(x => x.Id == bugId)) throw new BugNotFoundException();
         if (!await Context.Users.AnyAsync(x => x.Id == userId)) throw new UserNotFoundException();
-        if (!await Context.Projects.AnyAsync(x => x.Users.Any(c => c.Id == userId))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
         if (!await Context.Bugs.AnyAsync(x => x.Id == bugId
             && x.BugAssignees.Any(x => x.UserId == userId))) throw new UserNotAssignedToBugException();
 
@@ -117,5 +119,11 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!hasPermission) throw new InsufficientPermissionToUpdateBugStatusException();
 
         await Context.Bugs.Where(x => x.Id == bugId).ExecuteUpdateAsync(setters => setters.SetProperty(b => b.Status, bugStatus));
+    }
+
+    public async Task<int> GetBugProjectIdAsync(int bugId)
+    {
+        Bug? bug = await Context.Bugs.Include(c => c.Project).FirstOrDefaultAsync(x => x.Id == bugId) ?? throw new BugNotFoundException();
+        return bug.ProjectId;
     }
 }
