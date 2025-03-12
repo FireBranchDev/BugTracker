@@ -23,4 +23,9 @@ public static class ApiErrorMessages
     public const string InsufficientPermissionToUpdateBugStatus = "The insufficient permission to update bug status.";
     public const string CreatingNewProjectUnavailable = "Creating a new project is currently unavailable.";
     public const string InsufficientPermissionToCreateBug = "The user has insufficient permission to create a bug.";
+    public const string CollaboratorToAddNotFound = "The collaborator you are trying to add does not exist.";
+    public const string InsufficientPermissionToAddProjectCollaborator = "Insufficient permission to add a project collaborator.";
+    public const string CollaboratorToRemoveNotFound = "The collaborator you are trying to remove does not exist.";
+    public const string InsufficientPermissionToRemoveProjectCollaborator = "Insufficient permission to remove a project collaborator.";
+    public const string AttemptingToRemoveNonProjectCollaborator = "You are attempting to remove a non project collaborator.";
 }

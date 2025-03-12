@@ -49,14 +49,14 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
     public async Task AddCollaboratorAsync(int userId, int userIdOfCollaboratorToAdd, int projectId)
     {
         if (await Context.Users.FindAsync(userId) is null) throw new UserNotFoundException();
-        if (await Context.Users.FindAsync(userIdOfCollaboratorToAdd) is null) throw new UserNotFoundException();
+        if (await Context.Users.FindAsync(userIdOfCollaboratorToAdd) is null) throw new CollaboratorToAddNotFoundException();
         if (await Context.Projects.FindAsync(projectId) is null) throw new ProjectNotFoundException();
 
         Project project = await Context.Projects.Include(x => x.Users).FirstAsync(c => c.Id == projectId);
         User userAdding = await Context.Users.FirstAsync(c => c.Id == userId);
         if (!project.Users.Contains(userAdding)) throw new UserNotProjectCollaboratorException();
 
-        bool hasPermission = await Context.UserProjectPermissions.AnyAsync(c => c.User == userAdding && c.Project == project && c.ProjectPermission.Type == ProjectPermissionType.AddCollaborator);
+        bool hasPermission = await HasPermissionToPerformActionAsync(projectId, userId, ProjectPermissionType.AddCollaborator);
         if (!hasPermission) throw new InsufficientPermissionToAddCollaboratorException();
 
         User collaboratorToAdd = await Context.Users.FirstAsync(c => c.Id == userIdOfCollaboratorToAdd);
@@ -67,18 +67,18 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
     public async Task RemoveCollaboratorAsync(int userId, int userIdOfCollaboratorToRemove, int projectId)
     {
         if (await Context.Users.FindAsync(userId) is null) throw new UserNotFoundException();
-        if (await Context.Users.FindAsync(userIdOfCollaboratorToRemove) is null) throw new UserNotFoundException();
-        if (await Context.Projects.FindAsync(projectId) is null) throw new ProjectNotFoundException();
+        if (await Context.Users.FindAsync(userIdOfCollaboratorToRemove) is null) throw new CollaboratorToRemoveNotFoundException();
+        Project? project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
 
-        if (!await Context.Projects.AnyAsync(y => y.Users.Any(x => x.Id == userId)
-            && y.Users.Any(x => x.Id == userIdOfCollaboratorToRemove))) throw new UserNotProjectCollaboratorException();
+        if (!await Context.Projects.Where(c => c.Id == projectId && c.Users.Where(x => x.Id == userId).Any()).AnyAsync())
+            throw new UserNotProjectCollaboratorException();
 
-        if (!await Context.UserProjectPermissions.Where(c => c.UserId == userId && c.ProjectId == projectId
-            && c.ProjectPermissionId == Context.ProjectPermissions.Where(x => x.Type == ProjectPermissionType.RemoveCollaborator).Select(c => c.Id).First())
-            .AnyAsync()) throw new InsufficientPermissionToRemoveCollaboratorException();
+        if (!await HasPermissionToPerformActionAsync(projectId, userId, ProjectPermissionType.RemoveCollaborator)) throw new InsufficientPermissionToRemoveCollaboratorException();
 
-        await Context.Projects.Where(c => c.Id == projectId && c.Users.Any(x => x.Id == userIdOfCollaboratorToRemove)).ExecuteDeleteAsync();
-        await Context.SaveChangesAsync();
+        if (!await Context.Projects.Where(c => c.Id == projectId && c.Users.Where(x => x.Id == userIdOfCollaboratorToRemove).Any()).AnyAsync())
+            throw new AttemptingToRemoveNonProjectCollaboratorException();
+
+        await Context.Entry(project).Collection(x => x.ProjectUsers).Query().Where(c => c.ProjectsId == projectId && c.UsersId == userIdOfCollaboratorToRemove).ExecuteDeleteAsync();
     }
 
     public async Task<List<Project>> GetAllProjectsAsync(int userId)

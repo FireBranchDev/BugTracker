@@ -177,6 +177,112 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         return Ok(ApiSuccessMessages.SuccessfullyDeletedProject);
     }
 
+    [Route("{projectId}/add-collaborator/{collaboratorToAddId}")]
+    [HttpPost]
+    public async Task<IActionResult> AddCollaboratorAsync(int projectId, int collaboratorToAddId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _projectRepository.AddCollaboratorAsync(user.Id, collaboratorToAddId, projectId);
+        }
+        catch (CollaboratorToAddNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.CollaboratorToAddNotFound);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (InsufficientPermissionToAddCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToAddProjectCollaborator);
+        }
+        
+        return NoContent();
+    }
+
+    [Route("{projectId}/collaborators/remove/{collaboratorId}")]
+    [HttpDelete]
+    public async Task<IActionResult> RemoveCollaboratorAsync(int projectId, int collaboratorId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        } 
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            await _projectRepository.RemoveCollaboratorAsync(user.Id, collaboratorId, projectId);
+        }
+        catch (CollaboratorToRemoveNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.CollaboratorToRemoveNotFound);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+        catch (InsufficientPermissionToRemoveCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToRemoveProjectCollaborator);
+        }
+        catch (AttemptingToRemoveNonProjectCollaboratorException)
+        {
+            return NotFound(ApiErrorMessages.AttemptingToRemoveNonProjectCollaborator);
+        }
+
+        return NoContent();
+    }
+
     public static Project ConvertToModel(BackendClassLib.Database.Models.Project project)
     {
         return new()

@@ -82,6 +82,11 @@ public class ApplicationDbContext : DbContext
             .HasOne(c => c.User)
             .WithMany(y => y.DefaultProjectRoleProjectUsers)
             .HasForeignKey(c => c.UserId);
+
+        modelBuilder.Entity<Project>()
+            .HasMany(x => x.Users)
+            .WithMany(x => x.Projects)
+            .UsingEntity<ProjectUser>();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

@@ -19,4 +19,6 @@ public class User : Base
     public List<BugPermissionUser> BugPermissionUsers { get; } = [];
 
     public List<DefaultProjectRoleProjectUser> DefaultProjectRoleProjectUsers { get; } = [];
+
+    public List<ProjectUser> ProjectUsers { get; } = [];
 }
