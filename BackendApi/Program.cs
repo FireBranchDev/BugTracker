@@ -4,6 +4,7 @@ using BackendClassLib.Database;
 using BackendClassLib.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Security.Claims;
 
@@ -37,13 +38,40 @@ builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IBugRepository, BugRepository>();
 builder.Services.AddScoped<BugRepository>();
 builder.Services.AddScoped<IProjectPermissionRepository, ProjectPermissionRepository>();
+builder.Services.AddScoped<IProjectDefaultRolesRepository, ProjectDefaultRolesRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 //Add support to logging with SERILOG
 builder.Host.UseSerilog((context, configuration) =>
