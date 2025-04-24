@@ -32,4 +32,12 @@ public class ProjectPermissionRepository(ApplicationDbContext context) : Reposit
 
         return projectPermissions;
     }
+
+    public async Task<bool> HasPermissionAsync(int projectId, int userId, ProjectPermissionType projectPermissionType)
+    {
+        Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        return await Context.DefaultProjectRoles.AnyAsync(c => c.DefaultProjectRoleProjectUsers
+            .Any(c => c.ProjectId == projectId && c.UserId == userId && c.DefaultProjectRole.ProjectPermissions.Any(c => c.Type == projectPermissionType)));
+    }
 }
