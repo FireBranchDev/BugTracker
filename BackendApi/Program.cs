@@ -77,6 +77,21 @@ builder.Services.AddSwaggerGen(opt =>
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
+if (builder.Environment.IsDevelopment())
+{
+    // Development CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowSpecificOrigins",
+          policy =>
+          {
+              policy.WithOrigins(builder.Configuration["FrontendOrigin"]!)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+          });
+    });
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -88,6 +103,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowSpecificOrigins");
 
 //Add support to logging request with SERILOG
 app.UseSerilogRequestLogging();
