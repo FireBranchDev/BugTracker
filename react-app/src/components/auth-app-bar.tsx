@@ -1,5 +1,5 @@
 import * as React from 'react';
-import AppBar from '@mui/material/AppBar';
+import AppBarMui from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
@@ -7,19 +7,35 @@ import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
 import Container from '@mui/material/Container';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
+import { Link } from 'react-router';
+import Button from '@mui/material/Button';
+import LogoutButton from './logout-button';
 
-const pages = ['Home', 'Getting Started'];
-const settings = ['Profile', 'Projects', 'Logout'];
+const pages = [
+  {
+    title: 'Dashboard',
+    path: '/',
+  },
+  {
+    title: 'Projects',
+    path: '/projects',
+  },
+];
+
+const settings = [
+  {
+    title: 'Profile',
+    path: '/profile',
+  },
+];
 
 interface HeaderProps {
   brand?: string;
 }
 
-function Header({ brand = 'LOGO' }: HeaderProps) {
+function AuthAppBar({ brand = 'BugTracker' }: HeaderProps) {
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
     null
   );
@@ -43,14 +59,13 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
   };
 
   return (
-    <AppBar position="static">
+    <AppBarMui position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Typography
             variant="h6"
             noWrap
-            component="a"
-            href="#app-bar-with-responsive-menu"
+            component="li"
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -61,13 +76,18 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
               textDecoration: 'none',
             }}
           >
-            {brand}
+            <Link
+              to="/home"
+              style={{ textDecoration: 'inherit', color: 'inherit' }}
+            >
+              {brand}
+            </Link>
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
-              aria-label="account of current user"
+              aria-label="Opens the navigation for the menu"
               aria-controls="menu-appbar"
               aria-haspopup="true"
               onClick={handleOpenNavMenu}
@@ -91,9 +111,16 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
               onClose={handleCloseNavMenu}
               sx={{ display: { xs: 'block', md: 'none' } }}
             >
-              {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
+              {pages.map((page, key) => (
+                <MenuItem key={key} onClick={handleCloseNavMenu}>
+                  <Link
+                    to={page.path}
+                    style={{ textDecoration: 'inherit', color: 'inherit' }}
+                  >
+                    <Typography sx={{ textAlign: 'center' }}>
+                      {page.title}
+                    </Typography>
+                  </Link>
                 </MenuItem>
               ))}
             </Menu>
@@ -101,8 +128,7 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
           <Typography
             variant="h5"
             noWrap
-            component="a"
-            href="#app-bar-with-responsive-menu"
+            component="li"
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -114,24 +140,54 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
               textDecoration: 'none',
             }}
           >
-            {brand}
+            <Link
+              to="/home"
+              style={{ color: 'inherit', textDecoration: 'inherit' }}
+            >
+              {brand}
+            </Link>
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            {pages.map((page) => (
-              <Button
-                key={page}
-                onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: 'white', display: 'block' }}
-              >
-                {page}
-              </Button>
+            {pages.map((page, key) => (
+              <MenuItem onClick={handleCloseNavMenu} key={key}>
+                <Link
+                  style={{
+                    marginRight: 2,
+                    color: 'inherit',
+                    display: 'block',
+                    textDecoration: 'inherit',
+                  }}
+                  to={page.path}
+                >
+                  <Typography
+                    variant="h6"
+                    noWrap
+                    sx={{
+                      mr: 2,
+                      display: { xs: 'none', md: 'flex' },
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      letterSpacing: '.3rem',
+                      color: 'inherit',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {page.title}
+                  </Typography>
+                </Link>
+              </MenuItem>
             ))}
           </Box>
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
+              <Button
+                onClick={handleOpenUserMenu}
+                sx={{ p: 0 }}
+                variant="text"
+                style={{ color: 'inherit' }}
+              >
+                Settings
+              </Button>
             </Tooltip>
             <Menu
               sx={{ mt: '45px' }}
@@ -149,19 +205,27 @@ function Header({ brand = 'LOGO' }: HeaderProps) {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>
-                    {setting}
-                  </Typography>
+              {settings.map((setting, key) => (
+                <MenuItem key={key} onClick={handleCloseUserMenu}>
+                  <Link
+                    to={setting.path}
+                    style={{ textDecoration: 'inherit', color: 'inherit' }}
+                  >
+                    <Typography sx={{ textAlign: 'center' }}>
+                      {setting.title}
+                    </Typography>
+                  </Link>
                 </MenuItem>
               ))}
+              <MenuItem key="logout" onClick={handleCloseUserMenu}>
+                <LogoutButton />
+              </MenuItem>
             </Menu>
           </Box>
         </Toolbar>
       </Container>
-    </AppBar>
+    </AppBarMui>
   );
 }
 
-export default Header;
+export default AuthAppBar;
