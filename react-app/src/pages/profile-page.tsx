@@ -5,7 +5,6 @@ import { AppContext } from '../contexts';
 
 const ProfilePage: FC = () => {
   const appContext = useContext(AppContext);
-  console.log(appContext);
   return (
     <>
       <DefaultPageLayout title="Profile">
