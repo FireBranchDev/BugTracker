@@ -42,14 +42,16 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
 
         try
         {
-            await _projectRepository.AddAsync(project.Name, project.Description, auth.Id);
+            int id = await _projectRepository.AddAsync(project.Name, project.Description, auth.Id);
+
+            CreatedResult createdResult = Created();
+            createdResult.Location = $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}/{id}";
+            return createdResult;
         }
         catch (UserNotFoundException)
         {
             return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
         }
-
-        return NoContent();
     }
 
     [HttpGet]
