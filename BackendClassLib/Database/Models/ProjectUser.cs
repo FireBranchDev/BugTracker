@@ -2,6 +2,8 @@
 
 public class ProjectUser
 {
-    public int ProjectsId { get; set; }
-    public int UsersId { get; set; }
+    public int ProjectId { get; set; }
+    public int UserId { get; set; }
+
+    public DateTime Joined { get; set; }
 }

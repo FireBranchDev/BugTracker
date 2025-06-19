@@ -96,7 +96,7 @@ namespace BackendClassLib.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BugAssignees", (string)null);
+                    b.ToTable("BugAssignee");
                 });
 
             modelBuilder.Entity("BackendClassLib.Database.Models.BugPermission", b =>
@@ -126,13 +126,13 @@ namespace BackendClassLib.Migrations
                     b.Property<int>("BugPermissionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("BugId", "BugPermissionId", "UserId");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BugId", "BugPermissionId");
 
                     b.HasIndex("BugPermissionId");
 
@@ -167,6 +167,12 @@ namespace BackendClassLib.Migrations
 
             modelBuilder.Entity("BackendClassLib.Database.Models.DefaultProjectRoleProjectUser", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
                     b.Property<int>("DefaultProjectRoleId")
                         .HasColumnType("int");
 
@@ -176,13 +182,15 @@ namespace BackendClassLib.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("DefaultProjectRoleId", "ProjectId", "UserId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultProjectRoleId");
 
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DefaultProjectRoleProjectUsers", (string)null);
+                    b.ToTable("DefaultProjectRoleProjectUser");
                 });
 
             modelBuilder.Entity("BackendClassLib.Database.Models.Project", b =>
@@ -242,23 +250,25 @@ namespace BackendClassLib.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Type")
-                        .IsUnique();
-
                     b.ToTable("ProjectPermissions");
                 });
 
             modelBuilder.Entity("BackendClassLib.Database.Models.ProjectUser", b =>
                 {
-                    b.Property<int>("ProjectsId")
+                    b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UsersId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("ProjectsId", "UsersId");
+                    b.Property<DateTime>("Joined")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.HasIndex("UsersId");
+                    b.HasKey("ProjectId", "UserId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("ProjectUser");
                 });
@@ -279,8 +289,7 @@ namespace BackendClassLib.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
@@ -295,8 +304,14 @@ namespace BackendClassLib.Migrations
 
             modelBuilder.Entity("BackendClassLib.Database.Models.UserProjectPermission", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
@@ -304,17 +319,19 @@ namespace BackendClassLib.Migrations
                     b.Property<int>("ProjectPermissionId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("UserId", "ProjectId", "ProjectPermissionId");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("ProjectPermissionId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserProjectPermissions");
                 });
@@ -431,13 +448,13 @@ namespace BackendClassLib.Migrations
                 {
                     b.HasOne("BackendClassLib.Database.Models.Project", null)
                         .WithMany("ProjectUsers")
-                        .HasForeignKey("ProjectsId")
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BackendClassLib.Database.Models.User", null)
                         .WithMany("ProjectUsers")
-                        .HasForeignKey("UsersId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

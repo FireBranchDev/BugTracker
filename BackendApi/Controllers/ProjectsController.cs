@@ -1,5 +1,7 @@
-﻿using BackendClassLib.Database.Models;
+﻿using BackendApi.DTOs;
+using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
+using BackendClassLib.Models;
 using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -7,17 +9,19 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Security.Claims;
 using Project = BackendApi.Models.Project;
+using User = BackendClassLib.Database.Models.User;
 
 namespace BackendApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository) : ControllerBase
+public class ProjectsController(IAuthRepository authRepository, IProjectRepository projectRepository, IUserRepository userRepository, IProjectRolesRepository projectRolesRepository) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IUserRepository _userRepository = userRepository;
+    readonly IProjectRolesRepository _projectRolesRepository = projectRolesRepository;
 
     [HttpPost]
     public async Task<IActionResult> Post(Project project)
@@ -285,6 +289,60 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         return NoContent();
     }
 
+    [HttpGet("{projectId}/collaborators")]
+    public async Task<ActionResult<List<Models.User>>> GetAllCollaboratorsAsync(int projectId, byte take = 10, int? lastRetrievedUserId = null)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            List<Collaborator> collaborators = await _projectRepository.RetrieveCollaboratorsAsync(projectId, user.Id, take, lastRetrievedUserId);
+            List<CollaboratorDto> collaboratorsDtos = [];
+            foreach (Collaborator collaborator in collaborators)
+            {
+                CollaboratorDto collaboratorDto = new()
+                {
+                    Id = collaborator.UserId,
+                    DisplayName = collaborator.DisplayName,
+                    IsOwner = await _projectRolesRepository.IsOwnerAsync(projectId, collaborator.UserId),
+                    Joined = collaborator.Joined,
+                };
+                collaboratorsDtos.Add(collaboratorDto);
+            }
+
+            return Ok(collaboratorsDtos);
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.ProjectNotFound);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+    }
+
     public static Project ConvertToModel(BackendClassLib.Database.Models.Project project)
     {
         return new()
@@ -292,6 +350,15 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             Id = project.Id,
             Name = project.Name,
             Description = project.Description,
+        };
+    }
+
+    public static Models.User ConvertToModel(User user)
+    {
+        return new()
+        {
+            Id = user.Id,
+            DisplayName = user.DisplayName
         };
     }
 }

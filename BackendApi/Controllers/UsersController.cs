@@ -1,9 +1,11 @@
-﻿using BackendClassLib.Database.Models;
+﻿using BackendApi.DTOs;
+using BackendClassLib.Database.Models;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Services;
 using System.Security.Claims;
 
 namespace BackendApi.Controllers;
@@ -68,6 +70,32 @@ public class UsersController(AuthRepository authRepo, UserRepository userRepo) :
         catch (UserNotFoundException)
         {
             return NotFound(ApiErrorMessages.NoRecordOfUserAccount);
+        }
+    }
+
+    [HttpGet("search")]
+    public async Task<ActionResult> SearchByDisplayName(string displayName, byte limit = 10, uint? lastSeenId = null, int? excludeFromProjectId = null)
+    {
+        if (excludeFromProjectId != null)
+        {
+            return Ok(await _userRepo.SearchByDisplayNameAsync(displayName, limit, lastSeenId, (int)excludeFromProjectId));
+        }
+
+        return Ok(await _userRepo.SearchByDisplayNameAsync(displayName, limit, lastSeenId));
+    }
+
+    [HttpGet("v2/search")]
+    public ActionResult<IAsyncEnumerable<UserDto>> Search([FromQuery] string? displayName, [FromQuery] int? excludeFromProjectId, int limit = 10, int lastRetrievedId = 0)
+    {
+        var searchResult = _userRepo.Search(displayName, excludeFromProjectId, limit, lastRetrievedId);
+        return new ActionResult<IAsyncEnumerable<UserDto>>(ConvertToDto(searchResult));
+    }
+
+    static async IAsyncEnumerable<UserDto> ConvertToDto(IAsyncEnumerable<User> users)
+    {
+        await foreach (var user in users)
+        {
+            yield return new UserDto { Id = user.Id, DisplayName = user.DisplayName };
         }
     }
 }

@@ -29,6 +29,47 @@ public class UserRepository(ApplicationDbContext context) : Repository(context),
         return await Context.Users.Where(c => c.AuthId == authId).FirstAsync();
     }
 
+    public IAsyncEnumerable<User> Search(string? displayName, int? excludeFromProjectId, int limit = 10, int lastRetrievedId = 0)
+    {
+        IQueryable<User> query = Context.Users.OrderBy(x => x.Id).Where(c => c.Id > lastRetrievedId);
+
+        if (displayName != null)
+        {
+            query = query.Where(c => c.DisplayName.Contains(displayName));
+        }
+
+        if (excludeFromProjectId != null)
+        {
+            query = query.Where(c => !c.ProjectUsers.Any(c => c.ProjectId == excludeFromProjectId));
+        }
+
+        return query.Take(limit).AsAsyncEnumerable();
+    }
+
+    public async Task<List<User>> SearchByDisplayNameAsync(string displayName, byte limit = 10, uint? lastSeenUserId = null)
+    {
+        if (lastSeenUserId.HasValue)
+        {
+            return await Context.Users.Where(c => c.DisplayName.Contains(displayName) && c.Id > lastSeenUserId).Take(limit).OrderByDescending(c => c.Id).ToListAsync();
+        }
+
+        return await Context.Users.Where(c => c.DisplayName.Contains(displayName)).OrderByDescending(c => c.Id).ToListAsync();
+    }
+
+    public async Task<List<BackendClassLib.Models.User>> SearchByDisplayNameAsync(string displayName, byte limit, uint? lastRetrievedUserId, int excludeFromProjectId)
+    {
+        if (!await Context.Projects.AnyAsync(c => c.Id == excludeFromProjectId)) throw new ProjectNotFoundException();
+        return await Context.Users.Where(u => u.DisplayName.Contains(displayName) && !u.Projects.Any(c => c.Id == excludeFromProjectId)).Take(limit).Order().Select(j => new
+        {
+            j.Id,
+            j.DisplayName
+        }).Select(x => new BackendClassLib.Models.User
+        {
+            Id = x.Id,
+            DisplayName = x.DisplayName,
+        }).ToListAsync();
+    }
+
     public async Task UpdateDisplayNameAsync(int authId, string displayName)
     {
         Auth? auth = await Context.Auths.FindAsync(authId) ?? throw new AuthNotFoundException();

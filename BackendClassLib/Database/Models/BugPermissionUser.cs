@@ -1,8 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿namespace BackendClassLib.Database.Models;
 
-namespace BackendClassLib.Database.Models;
-
-[PrimaryKey(nameof(BugId), nameof(BugPermissionId), nameof(UserId))]
 public class BugPermissionUser
 {
     public int BugId { get; set; }

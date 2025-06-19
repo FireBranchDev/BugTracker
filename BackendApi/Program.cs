@@ -39,6 +39,7 @@ builder.Services.AddScoped<IBugRepository, BugRepository>();
 builder.Services.AddScoped<BugRepository>();
 builder.Services.AddScoped<IProjectPermissionRepository, ProjectPermissionRepository>();
 builder.Services.AddScoped<IProjectDefaultRolesRepository, ProjectDefaultRolesRepository>();
+builder.Services.AddScoped<IProjectRolesRepository, ProjectRolesRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
@@ -87,7 +88,8 @@ if (builder.Environment.IsDevelopment())
           {
               policy.WithOrigins(builder.Configuration["FrontendOrigin"]!)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .WithExposedHeaders(["Location"]);
           });
     });
 }

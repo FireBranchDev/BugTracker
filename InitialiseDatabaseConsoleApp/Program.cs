@@ -50,3 +50,104 @@ if (collaborator is null)
 
     await context.SaveChangesAsync();
 }
+
+// Generate testing users
+Random rnd = new();
+
+List<char> lowerCaseAlphabet = [];
+for (char letter = 'a'; letter <= 'z'; letter++)
+{
+    lowerCaseAlphabet.Add(letter);
+}
+
+char RandomLowerCaseLetter()
+{
+    int count = lowerCaseAlphabet.Count;
+    int num = rnd.Next(count);
+    return lowerCaseAlphabet[num];
+}
+
+List<char> upperCaseAlphabet = [];
+for (char letter = 'A'; letter <= 'Z'; letter++)
+{
+    upperCaseAlphabet.Add(letter);
+}
+
+char RandomUpperCaseLetter()
+{
+    int count = upperCaseAlphabet.Count;
+    int num = rnd.Next(count);
+    return upperCaseAlphabet[num];
+}
+
+List<byte> digits = [];
+for (byte i = 0; i <= 9; i++)
+{
+    digits.Add(i);
+}
+
+byte RandomDigit()
+{
+    int count = digits.Count;
+    int num = rnd.Next(count);
+    return digits[num];
+}
+
+List<string> testingUsersAuthIds = [];
+
+const int MaximumAuthIdLength = 24;
+
+string RandomAuthId()
+{
+    string authId = "";
+    for (int j = 1; j <= MaximumAuthIdLength; j++)
+    {
+        int num = rnd.Next(1, 4);
+        switch (num)
+        {
+            case 1:
+                authId += RandomLowerCaseLetter();
+                break;
+            case 2:
+                authId += RandomUpperCaseLetter();
+                break;
+            case 3:
+                authId += RandomDigit();
+                break;
+        }
+    }
+
+    return authId;
+}
+
+const int NumberOfTestingUsers = 20;
+for (int i = 1; i <= NumberOfTestingUsers; i++)
+{
+    string randomAuthId = RandomAuthId();
+    while (await context.Auths.Where(c => c.UserIds.Contains(randomAuthId)).AnyAsync())
+    {
+        randomAuthId = RandomAuthId();
+    }
+
+    Auth auth = new()
+    {
+        CreatedOn = DateTime.UtcNow,
+        UpdatedOn = DateTime.UtcNow,
+    };
+
+    auth.UserIds.Add(randomAuthId);
+
+    await context.Auths.AddAsync(auth);
+    await context.SaveChangesAsync();
+
+    User user = new()
+    {
+        DisplayName = $"Testing User {auth.Id}",
+        CreatedOn = DateTime.UtcNow,
+        UpdatedOn = DateTime.UtcNow,
+    };
+
+    auth.User = user;
+}
+
+await context.SaveChangesAsync();

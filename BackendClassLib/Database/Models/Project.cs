@@ -11,6 +11,7 @@ public class Project : Base
     public string? Description { get; set; }
 
     public List<User> Users { get; } = [];
+    public List<ProjectUser> ProjectUsers { get; } = [];
 
     public List<Bug> Bugs { get; } = [];
 
@@ -19,6 +20,4 @@ public class Project : Base
     public List<DefaultProjectRole> DefaultProjectRoles { get; } = [];
 
     public List<DefaultProjectRoleProjectUser> DefaultProjectRoleProjectUsers { get; } = [];
-
-    public List<ProjectUser> ProjectUsers { get; } = [];
 }

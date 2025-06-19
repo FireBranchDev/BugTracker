@@ -1,4 +1,5 @@
 ﻿using BackendClassLib.Database.Models;
+using BackendClassLib.Models;
 
 namespace BackendClassLib.Database.Repository;
 
@@ -12,4 +13,5 @@ public interface IProjectRepository
     Task<Project?> FindAsync(int projectId);
     Task DeleteAsync(int projectId, int userId);
     Task<bool> HasPermissionToPerformActionAsync(int projectId, int userId, ProjectPermissionType projectPermissionType);
+    Task<List<Collaborator>> RetrieveCollaboratorsAsync(int projectId, int userId, byte take = 10, int? lastRetrievedUserId = null);
 }

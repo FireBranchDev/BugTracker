@@ -9,6 +9,8 @@ public class User : Base
 
     public List<Project> Projects { get; } = [];
 
+    public List<ProjectUser> ProjectUsers { get; } = [];
+
     public List<UserProjectPermission> UserProjectPermissions { get; } = [];
 
     public List<Bug> AssignedBugs { get; } = [];
@@ -20,5 +22,4 @@ public class User : Base
 
     public List<DefaultProjectRoleProjectUser> DefaultProjectRoleProjectUsers { get; } = [];
 
-    public List<ProjectUser> ProjectUsers { get; } = [];
 }
