@@ -14,4 +14,5 @@ public interface IProjectRepository
     Task DeleteAsync(int projectId, int userId);
     Task<bool> HasPermissionToPerformActionAsync(int projectId, int userId, ProjectPermissionType projectPermissionType);
     Task<List<Collaborator>> RetrieveCollaboratorsAsync(int projectId, int userId, byte take = 10, int? lastRetrievedUserId = null);
+    Task<bool> AddCollaboratorsAsync(int projectId, int userId, List<int> userIdsToAdd);
 }

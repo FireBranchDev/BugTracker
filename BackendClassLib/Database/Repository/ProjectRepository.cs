@@ -162,4 +162,30 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
             Joined = j.Joined
         }).Take(take).OrderBy(c => c.Joined).ToListAsync();
     }
+
+    public async Task<bool> AddCollaboratorsAsync(int projectId, int userId, List<int> userIdsToAdd)
+    {
+        Project project = await Context.Projects.FindAsync(projectId) ?? throw new ProjectNotFoundException();
+        User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        if (!await Context.Entry(project).Collection(c => c.Users).Query().Where(x => x.Id == userId).AnyAsync()) throw new UserNotProjectCollaboratorException();
+
+        bool hasPermission = await projectPermissionRepository.HasPermissionAsync(projectId, userId, ProjectPermissionType.AddCollaborator);
+        if (!hasPermission) return false;
+
+        foreach (var i in userIdsToAdd)
+        {
+            User? userToAdd = await Context.Users.FindAsync(i);
+            if (userToAdd == null) return false;
+            project.ProjectUsers.Add(new() { ProjectId = projectId, UserId = userToAdd.Id });
+            DefaultProjectRole? collaborator = await Context.DefaultProjectRoles.Where(c => c.Name == "Collaborator").Take(1).FirstOrDefaultAsync();
+            if (collaborator != null)
+            {
+                project.DefaultProjectRoleProjectUsers.Add(new() { Project = project, User = userToAdd, DefaultProjectRole = collaborator });
+            }
+        }
+
+        await Context.SaveChangesAsync();
+
+        return true;
+    }
 }

@@ -290,6 +290,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
     }
 
     [HttpGet("{projectId}/collaborators")]
+    [ActionName(nameof(GetAllCollaboratorsAsync))]
     public async Task<ActionResult<List<Models.User>>> GetAllCollaboratorsAsync(int projectId, byte take = 10, int? lastRetrievedUserId = null)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
@@ -341,6 +342,48 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         {
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
         }
+    }
+
+    [HttpPost("{projectId}/manage/collaborators/add")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<ActionResult> AddCollaboratorsAsync(int projectId, [FromBody] AddCollaboratorsDto addCollaboratorsDto)
+    {
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+        
+        bool isSuccessfulAddingCollaborators = await _projectRepository.AddCollaboratorsAsync(projectId, user.Id, addCollaboratorsDto.UserIds);
+        if (!isSuccessfulAddingCollaborators)
+        {
+            return Ok(new
+            {
+                error = new {
+                    message = "Failed to add collaborators."
+                }
+            });
+        }
+       
+        return CreatedAtAction(nameof(GetAllCollaboratorsAsync), new { projectId }, null);
     }
 
     public static Project ConvertToModel(BackendClassLib.Database.Models.Project project)
