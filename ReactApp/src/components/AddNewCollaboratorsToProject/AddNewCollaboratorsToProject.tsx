@@ -11,7 +11,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useQuery, type QueryFunction } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  type QueryFunction,
+} from '@tanstack/react-query';
 import { useState, type ChangeEventHandler, type FC } from 'react';
 import type { User } from '../../types';
 
@@ -65,7 +69,7 @@ const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
     return await res.json();
   };
 
-  const { isFetching, data } = useQuery({
+  const { isFetching, data, refetch } = useQuery({
     enabled: displayName !== '',
     queryKey: [
       'search-users',
@@ -133,6 +137,36 @@ const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
     setSelectedUsers(updatedSelectedUsers);
   };
 
+  const addCollaboratorsToProjectMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      const userIds = selectedUsers.map((c) => c.id);
+      const accessToken = await getAccessTokenSilently();
+      return await fetch(
+        `${import.meta.env.VITE_BUGTRACKER_BACKEND_API_ORIGIN}/api/projects/${projectId}/manage/collaborators/add`,
+        {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ userIds }),
+        },
+      );
+    },
+    onSuccess: () => {
+      abortController.abort();
+      setSelectedUsers([]);
+      setLastRetrievedId(0);
+      setLastRetrievedIdHistory([]);
+      refetch();
+    },
+  });
+
+  const handleClickAddUsersButton = async () => {
+    if (selectedUsers.length === 0) return;
+    await addCollaboratorsToProjectMutation.mutateAsync(projectId);
+  };
+
   return (
     <Box sx={{ mt: 2 }}>
       <Typography variant="body1">Add New Collaborators</Typography>
@@ -141,49 +175,67 @@ const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
         sx={{ mt: 0.5 }}
         onChange={handleChangeDisplayNameTextField}
       />
-      {isFetching && <Typography variant="body1">Loading</Typography>}
+      {isFetching ? (
+        <Typography variant="body1">Searching for users...</Typography>
+      ) : (
+        <>
+          {!data || data.length === 0 ? (
+            <Typography variant="body1">No users found.</Typography>
+          ) : (
+            <List>
+              {data?.map((user) => {
+                const labelId = 'add-new-collaborator-user-display-name-label';
+                return (
+                  <ListItem key={user.id} disablePadding>
+                    <ListItemButton
+                      role={undefined}
+                      onClick={onSelectUser(user)}
+                      dense
+                    >
+                      <ListItemIcon>
+                        <Checkbox
+                          edge="start"
+                          tabIndex={-1}
+                          checked={selectedUsers.indexOf(user) !== -1}
+                          disableRipple
+                          aria-labelledby={labelId}
+                        />
+                      </ListItemIcon>
+                      <ListItemText id={labelId} primary={user.displayName} />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </List>
+          )}
+        </>
+      )}
 
-      <List>
-        {data?.map((user) => {
-          const labelId = 'add-new-collaborator-user-display-name-label';
-          return (
-            <ListItem key={user.id} disablePadding>
-              <ListItemButton
-                role={undefined}
-                onClick={onSelectUser(user)}
-                dense
-              >
-                <ListItemIcon>
-                  <Checkbox
-                    edge="start"
-                    tabIndex={-1}
-                    checked={selectedUsers.indexOf(user) !== -1}
-                    disableRipple
-                    aria-labelledby={labelId}
-                  />
-                </ListItemIcon>
-                <ListItemText id={labelId} primary={user.displayName} />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
-
-      <Button
-        disabled={!data || lastRetrievedId === 0}
-        onClick={handleClickBackButton}
-      >
-        Back
-      </Button>
-      <Button
-        disabled={!data || data.length < SEARCH_RESULT_USERS_LIMIT}
-        onClick={handleClickNextButton}
-      >
-        Next
-      </Button>
-      <Button variant="contained" disabled={selectedUsers.length === 0}>
-        Add Users
-      </Button>
+      {addCollaboratorsToProjectMutation.isPending ? (
+        <Typography variant="body1">Adding users...</Typography>
+      ) : (
+        <>
+          <Button
+            disabled={!data || lastRetrievedId === 0}
+            onClick={handleClickBackButton}
+          >
+            Back
+          </Button>
+          <Button
+            disabled={!data || data.length < SEARCH_RESULT_USERS_LIMIT}
+            onClick={handleClickNextButton}
+          >
+            Next
+          </Button>
+          <Button
+            variant="contained"
+            disabled={selectedUsers.length === 0}
+            onClick={handleClickAddUsersButton}
+          >
+            Add Users
+          </Button>
+        </>
+      )}
     </Box>
   );
 };
