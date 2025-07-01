@@ -21,10 +21,12 @@ import type { User } from '../../types';
 
 type AddNewCollaboratorsToProjectProps = {
   projectId: number;
+  newCollaboratorsEvent: Event;
 };
 
 const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
   projectId,
+  newCollaboratorsEvent,
 }) => {
   const SEARCH_RESULT_USERS_LIMIT = 10;
 
@@ -155,6 +157,7 @@ const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
     },
     onSuccess: () => {
       abortController.abort();
+
       setSelectedUsers([]);
       setLastRetrievedId(0);
       setLastRetrievedIdHistory([]);
@@ -165,6 +168,7 @@ const AddNewCollaboratorsToProject: FC<AddNewCollaboratorsToProjectProps> = ({
   const handleClickAddUsersButton = async () => {
     if (selectedUsers.length === 0) return;
     await addCollaboratorsToProjectMutation.mutateAsync(projectId);
+    document.dispatchEvent(newCollaboratorsEvent);
   };
 
   return (
