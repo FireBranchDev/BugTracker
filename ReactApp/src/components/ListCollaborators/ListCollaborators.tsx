@@ -45,7 +45,7 @@ const ListCollaborators: FC<Props> = ({ projectId, newCollaboratorsEvent }) => {
     return await res.json();
   };
 
-  const [collaborators, setCollaborators] = useState<Array<Collaborator>>();
+  const [collaborators, setCollaborators] = useState<Array<Collaborator>>([]);
 
   const { isPending, data, refetch } = useQuery({
     queryKey: ['collaborators', projectId],
@@ -77,20 +77,19 @@ const ListCollaborators: FC<Props> = ({ projectId, newCollaboratorsEvent }) => {
         },
       );
     },
+    onSuccess: (_, variables) => {
+      const updatedCollaborators = [...collaborators];
+      const indexOfCollaborator = collaborators.findIndex(
+        (c) => c.id === variables.userId,
+      );
+      updatedCollaborators.splice(indexOfCollaborator, 1);
+      setCollaborators(updatedCollaborators);
+    },
   });
 
   const removeCollaborator = async (userId: number) => {
     if (collaborators === undefined) return;
     await removeCollaboratorMutation.mutateAsync({ projectId, userId });
-
-    if (removeCollaboratorMutation.isSuccess) {
-      const updatedCollaborators = [...collaborators];
-      const indexOfCollaborator = collaborators.findIndex(
-        (c) => c.id === userId,
-      );
-      updatedCollaborators.splice(indexOfCollaborator, 1);
-      setCollaborators(updatedCollaborators);
-    }
   };
 
   return (
