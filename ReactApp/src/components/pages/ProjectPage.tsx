@@ -1,8 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Grid, Typography } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Box, Grid, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { forwardRef, useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectNotFoundException from '../../exceptions/project-not-found-exception';
 import ViewingProjectForbiddenException from '../../exceptions/viewing-project-forbidden-exception';
 import BugCard from '../BugCard';
@@ -87,7 +88,26 @@ const ProjectPage = () => {
   return (
     <>
       <Grid container>
-        <Grid size="grow">
+        <Grid offset="auto" sx={{ p: 1 }}>
+          <IconButton
+            aria-label="settings"
+            color="primary"
+            sx={{
+              p: {
+                xs: 1,
+                md: 2,
+                lg: 3,
+              },
+            }}
+            LinkComponent={forwardRef((props) => (
+              <Link to={props.href} {...props}>
+                <SettingsIcon />
+              </Link>
+            ))}
+            href="settings"
+          />
+        </Grid>
+        <Grid size={{ xs: 12 }}>
           <Typography variant="h1" textAlign="center">
             {projectName}
           </Typography>
