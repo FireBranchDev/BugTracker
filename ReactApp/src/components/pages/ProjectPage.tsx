@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Grid, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { forwardRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectNotFoundException from '../../exceptions/project-not-found-exception';
 import ViewingProjectForbiddenException from '../../exceptions/viewing-project-forbidden-exception';
@@ -99,13 +99,11 @@ const ProjectPage = () => {
                 lg: 3,
               },
             }}
-            LinkComponent={forwardRef((props) => (
-              <Link to={props.href} {...props}>
-                <SettingsIcon />
-              </Link>
-            ))}
-            href="settings"
-          />
+            component={Link}
+            to="settings"
+          >
+            <SettingsIcon />
+          </IconButton>
         </Grid>
         <Grid size={{ xs: 12 }}>
           <Typography variant="h1" textAlign="center">
