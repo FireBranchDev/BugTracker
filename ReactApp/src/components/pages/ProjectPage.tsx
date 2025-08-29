@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectNotFoundException from '../../exceptions/project-not-found-exception';
 import ViewingProjectForbiddenException from '../../exceptions/viewing-project-forbidden-exception';
-import BugCard from '../BugCard';
+import type { Bug } from '../../types/bug';
+import { BugCard } from '../Bug';
 import Error from '../Error';
 import Loading from '../Loading';
 
@@ -59,6 +60,43 @@ const ProjectPage = () => {
     },
   });
 
+  const projectBugsQuery = useQuery({
+    queryKey: [`project_${projectId}_bugs`],
+    queryFn: async () => {
+      const accessToken = await getAccessTokenSilently();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BUGTRACKER_BACKEND_API_ORIGIN}/api/bugs/${projectId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (response.status === 403) {
+        throw new ViewingProjectForbiddenException();
+      }
+
+      if (response.status === 404) {
+        throw new ProjectNotFoundException();
+      }
+
+      return response.json();
+    },
+    retry: (failureCount: number, error: Error) => {
+      if (
+        error instanceof ProjectNotFoundException ||
+        error instanceof ViewingProjectForbiddenException
+      ) {
+        return false;
+      }
+
+      return failureCount < MAXIMUM_QUERY_RETRY_COUNT;
+    },
+  });
+
   useEffect(() => {
     if (state !== null && state.projectName !== null) {
       setProjectName(state.projectName);
@@ -77,7 +115,7 @@ const ProjectPage = () => {
         },
       });
     }
-  }, [state, data, error]);
+  }, [state, data, error, projectBugsQuery]);
 
   if (isLoading) {
     return <Loading />;
@@ -119,48 +157,32 @@ const ProjectPage = () => {
             sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
           >
             <Typography variant="h4">Bugs</Typography>
-            <Grid container spacing={1} sx={{ mx: 2 }}>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3,
-                }}
-              >
-                <BugCard title="Bug One" />
+            {(projectBugsQuery.data && projectBugsQuery.data.length > 0 && (
+              <Grid container spacing={1} sx={{ mx: 2 }}>
+                {projectBugsQuery.data.map((bug: Bug) => {
+                  return (
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 4,
+                        lg: 3,
+                      }}
+                      key={bug.id}
+                    >
+                      <BugCard
+                        title={bug.title}
+                        description={bug.description}
+                      />
+                    </Grid>
+                  );
+                })}
               </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3,
-                }}
-              >
-                <BugCard title="Bug Two" />
-              </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3,
-                }}
-              >
-                <BugCard title="Bug Three" />
-              </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3,
-                }}
-              >
-                <BugCard title="Bug Four" />
-              </Grid>
-            </Grid>
+            )) || (
+              <Typography variant="body1" fontSize={20}>
+                Currently no bugs.
+              </Typography>
+            )}
           </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 5, lg: 3 }}>
