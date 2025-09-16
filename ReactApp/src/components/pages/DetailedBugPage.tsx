@@ -9,9 +9,6 @@ const DetailedBugPage: FC = () => {
   const params = useParams();
 
   const { bugId } = params;
-  console.log(bugId);
-
-  console.log(location);
 
   let { title, description } = location.state || [undefined, undefined];
 
