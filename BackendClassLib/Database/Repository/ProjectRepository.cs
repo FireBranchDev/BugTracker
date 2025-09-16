@@ -188,4 +188,9 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
 
         return true;
     }
+
+    public static async Task<bool> IsCollaboratorAsync(ApplicationDbContext context, int projectId, int userId)
+    {
+       return await context.Projects.Where(c => c.Id == projectId && c.Users.Where(u => u.Id == userId).Any()).AnyAsync();
+    }
 }
