@@ -353,6 +353,48 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         return NoContent();
     }
 
+    [Route("{bugId}/find")]
+    [HttpGet]
+    public async Task<IActionResult> FindAsync(int bugId)
+    {
+        Claim? subClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
+        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+
+        BackendClassLib.Database.Models.Auth auth;
+        try
+        {
+            auth = await _authRepository.FindAsync(subClaim.Value);
+        }
+        catch (AuthUserIdNotFoundException)
+        {
+            auth = await _authRepository.InsertAsync(subClaim.Value);
+        }
+
+        BackendClassLib.Database.Models.User user;
+        try
+        {
+            user = await _userRepository.FindAsync(auth.Id);
+        }
+        catch (UserNotFoundException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+        }
+
+        try
+        {
+            BackendClassLib.Database.Models.Bug bug = await _bugRepository.FindBugAsync(bugId, user.Id);
+            return Ok(Convert(bug));
+        }
+        catch (BugNotFoundException)
+        {
+            return NotFound(ApiErrorMessages.NoRecordOfBug);
+        }
+        catch (UserNotProjectCollaboratorException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+        }
+    }
+
     static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
     {
         return new()
