@@ -8,7 +8,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import HomePage from './components/pages/HomePage';
 import './index.css';
-import { ProjectSettings } from './components/pages';
+import { DetailedBugPage, ProjectSettings } from './components/pages';
 import CreateUserAccountPage from './components/pages/CreateUserAccountPage';
 import ErrorPage from './components/pages/ErrorPage';
 import ForbiddenPage from './components/pages/ForbiddenPage';
@@ -46,6 +46,10 @@ const router = createBrowserRouter([
               {
                 path: 'projects/:projectId/settings',
                 element: <ProjectSettings />,
+              },
+              {
+                path: 'projects/:projectId/bugs/:bugId',
+                element: <DetailedBugPage />,
               },
             ],
           },

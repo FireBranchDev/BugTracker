@@ -173,6 +173,7 @@ const ProjectPage = () => {
                       <BugCard
                         title={bug.title}
                         description={bug.description}
+                        detailedBugUrl={`/projects/${projectId}/bugs/${bug.id}`}
                       />
                     </Grid>
                   );
