@@ -114,4 +114,11 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         Bug? bug = await Context.Bugs.Include(c => c.Project).FirstOrDefaultAsync(x => x.Id == bugId) ?? throw new BugNotFoundException();
         return bug.ProjectId;
     }
+
+    public async Task<Bug> FindBugAsync(int bugId, int userId)
+    {
+        Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
+        if (!await ProjectRepository.IsCollaboratorAsync(Context, bug.ProjectId, userId)) throw new UserNotProjectCollaboratorException();
+        return bug;
+    }
 }
