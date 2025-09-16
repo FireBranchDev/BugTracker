@@ -1,8 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography } from '@mui/material';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { FC } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import { BugLifecycle } from '../../enums/bug-lifecycle';
+import { BugStatusChip } from '../Bug';
 
 const DetailedBugPage: FC = () => {
   const location = useLocation();
@@ -38,12 +40,32 @@ const DetailedBugPage: FC = () => {
   }
 
   return (
-    <>
+    <Box
+      sx={{
+        m: 1,
+      }}
+    >
       <Typography variant="h1" textAlign="center">
         {title}
       </Typography>
+      <Typography variant="h6">Description</Typography>
       {description && <Typography variant="body1">{description}</Typography>}
-    </>
+      <Typography variant="h6">Status</Typography>
+      <BugStatusChip lifecycle={BugLifecycle.New} />
+      <Typography variant="h6">Created</Typography>
+      <Typography variant="body1">
+        16th September 2025, 1:43 PM UTC+8
+      </Typography>
+      <Typography variant="h6">Updated</Typography>
+      <Typography variant="body1">
+        16th September 2025, 1:46 PM UTC+8
+      </Typography>
+      <Box component="section">
+        <Typography variant="h5">Assign collaborators?</Typography>
+        <TextField id="collaborator" label="Collaborator" variant="filled" />
+        <Button variant="contained">Assign</Button>
+      </Box>
+    </Box>
   );
 };
 
