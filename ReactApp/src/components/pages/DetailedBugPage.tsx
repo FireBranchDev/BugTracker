@@ -1,7 +1,20 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  FormControl,
+  Input,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+  type SelectChangeEvent,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import type { FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { BugLifecycle } from '../../enums/bug-lifecycle';
 import { BugStatusChip } from '../Bug';
@@ -39,6 +52,42 @@ const DetailedBugPage: FC = () => {
     description = data.description;
   }
 
+  const [collaborators, setCollaborators] = useState([
+    'Jane Doe',
+    'John Doe',
+    'Mark Doe',
+    'Jack',
+  ]);
+
+  const [collaboratorsSelectedToAssign, setCollaboratorsSelectedToAssign] =
+    useState<Array<string>>([]);
+
+  const onCollaboratorsSelectedToAssignHandleChange = (
+    event: SelectChangeEvent<typeof collaborators>,
+  ) => {
+    const {
+      target: { value },
+    } = event;
+    setCollaboratorsSelectedToAssign(
+      typeof value === 'string' ? value.split(',') : value,
+    );
+  };
+
+  useEffect(() => {
+    console.log(collaboratorsSelectedToAssign);
+  }, [collaboratorsSelectedToAssign]);
+
+  const [searchForCollaboratorInput, setSearchForCollaboratorInput] =
+    useState('');
+
+  const [filteredCollaborators, setFilteredCollaborators] = useState<
+    Array<string>
+  >([]);
+
+  useEffect(() => {
+    console.log(searchForCollaboratorInput);
+  }, [searchForCollaboratorInput]);
+
   return (
     <Box
       sx={{
@@ -60,10 +109,58 @@ const DetailedBugPage: FC = () => {
       <Typography variant="body1">
         16th September 2025, 1:46 PM UTC+8
       </Typography>
-      <Box component="section">
-        <Typography variant="h5">Assign collaborators?</Typography>
-        <TextField id="collaborator" label="Collaborator" variant="filled" />
-        <Button variant="contained">Assign</Button>
+      <Box component="section" width="50%">
+        <Typography variant="h5">Assign Collaborators</Typography>
+        <Stack direction="column" spacing={1.5} mt={1}>
+          <TextField
+            id="collaborators"
+            label="Search for collaborators"
+            variant="outlined"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              let result = collaborators.filter((element, index) => {
+                console.log('filtering through collaborators', element);
+                return element.includes(event.target.value.trim());
+              });
+              console.log('Result after filter', result);
+              setSearchForCollaboratorInput(event.target.value);
+              setFilteredCollaborators(result);
+            }}
+          />
+          {filteredCollaborators.length >= 1 && (
+            <FormControl>
+              <InputLabel id="collaborators-assign-select-label">
+                Select Collaborators
+              </InputLabel>
+              <Select
+                labelId="collaborators-assign-select-label"
+                id="collaborators-assign-select"
+                multiple
+                label="Select Collaborators"
+                value={collaboratorsSelectedToAssign}
+                onChange={onCollaboratorsSelectedToAssignHandleChange}
+              >
+                {filteredCollaborators.map((collaborator, index) => {
+                  return (
+                    <MenuItem key={index} value={`${collaborator}`}>
+                      {collaborator}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          )}
+
+          <Button variant="contained">Assign</Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              setCollaboratorsSelectedToAssign([]);
+            }}
+          >
+            Clear Selected
+          </Button>
+        </Stack>
       </Box>
     </Box>
   );
