@@ -36,6 +36,10 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
             .HasMany(c => c.BugPermissions)
             .WithMany(c => c.Users)
             .UsingEntity<BugPermissionUser>();
+
+        modelBuilder.Entity<Bug>()
+            .Property(b => b.CreatedOn)
+            .HasDefaultValueSql("GETUTCDATE()");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
