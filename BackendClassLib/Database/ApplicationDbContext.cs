@@ -40,6 +40,10 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
         modelBuilder.Entity<Bug>()
             .Property(b => b.CreatedOn)
             .HasDefaultValueSql("GETUTCDATE()");
+
+        modelBuilder.Entity<Bug>()
+          .Property(b => b.UpdatedOn)
+          .HasDefaultValueSql("GETUTCDATE()");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
