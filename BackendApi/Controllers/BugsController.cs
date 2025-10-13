@@ -234,8 +234,18 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         {
             return NotFound(ApiErrorMessages.AssignCollaboratorToBugAssigneeNotFound);
         }
+        catch (CollaboratorAlreadyAssignedBug)
+        {
+            return Problem(
+                type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.10",
+                title: "Already Assigned Bug Collaborator",
+                detail: "The collaborator is already assigned to the bug.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
 
-        return NoContent();
+        return Ok(new {
+          title = "Successfully assigned collaborator"
+        });
     }
 
     [Route("/api/bugs/{bugId}/unassign/{collaboratorId}")]

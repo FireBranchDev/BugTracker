@@ -10,6 +10,9 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Adds services for using Problem Details format
+builder.Services.AddProblemDetails();
+
 string domain = $"https://{builder.Configuration["Auth0:Domain"]}/";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -95,6 +98,12 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
+// Converts unhandled exceptions into Problem Details responses
+app.UseExceptionHandler();
+
+// Returns the Problem Details response for (empty) non-successful responses
+app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

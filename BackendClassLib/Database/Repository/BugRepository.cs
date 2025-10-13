@@ -10,10 +10,16 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
         User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+        
         Project? project = await Context.Projects.Where(c => c.Bugs.Contains(bug)).FirstOrDefaultAsync() ?? throw new ProjectNotFoundException();
         if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
+        
         if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, project.Id, userId, ProjectPermissionType.AssignCollaboratorToBug)) throw new InsufficientPermissionToAssignCollaboratorToBug();
+        
         User assignee = await Context.Users.FindAsync(assigneeUserId) ?? throw new UserNotFoundException();
+
+        if (await Context.Entry(assignee).Collection(a => a.AssignedBugs).Query().Where(x => x.Id == bug.Id).AnyAsync()) throw new CollaboratorAlreadyAssignedBug();
+
         assignee.AssignedBugs.Add(bug);
         await Context.SaveChangesAsync();
     }
