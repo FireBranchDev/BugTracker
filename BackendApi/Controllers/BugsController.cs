@@ -211,7 +211,11 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return StatusCode(403, ApiErrorMessages.NoRecordOfUserAccount);
+            return Problem(
+               type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5",
+               title: "No Record of User Account",
+               detail: ApiErrorMessages.NoRecordOfUserAccount,
+               statusCode: StatusCodes.Status404NotFound);
         }
 
         try
@@ -220,19 +224,35 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (BugNotFoundException)
         {
-            return NotFound(ApiErrorMessages.NoRecordOfBug);
+            return Problem(
+               type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5",
+               title: "No Record of Bug",
+               detail: ApiErrorMessages.NoRecordOfBug,
+               statusCode: StatusCodes.Status404NotFound);
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode(403, ApiErrorMessages.UserNotProjectCollaborator);
+            return Problem(
+               type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.4",
+               title: "User Not Project Collaborator",
+               detail: ApiErrorMessages.UserNotProjectCollaborator,
+               statusCode: StatusCodes.Status403Forbidden);
         }
         catch (InsufficientPermissionToAssignCollaboratorToBug)
         {
-            return StatusCode(403, ApiErrorMessages.InsufficientPermissionAssignCollaboratorToBug);
+            return Problem(
+              type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.4",
+              title: "Insufficient Permission to Assign Collaborator to Bug",
+              detail: ApiErrorMessages.InsufficientPermissionAssignCollaboratorToBug,
+              statusCode: StatusCodes.Status403Forbidden);
         }
         catch (UserNotFoundException)
         {
-            return NotFound(ApiErrorMessages.AssignCollaboratorToBugAssigneeNotFound);
+            return Problem(
+             type: "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5",
+             title: "Assign Collaborator to Bug Assignee Not Found",
+             detail: ApiErrorMessages.AssignCollaboratorToBugAssigneeNotFound,
+             statusCode: StatusCodes.Status404NotFound);
         }
         catch (CollaboratorAlreadyAssignedBug)
         {
