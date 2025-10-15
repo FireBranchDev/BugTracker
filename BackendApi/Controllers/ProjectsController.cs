@@ -293,8 +293,8 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
     [ActionName(nameof(GetAllCollaboratorsAsync))]
     public async Task<ActionResult<List<Models.User>>> GetAllCollaboratorsAsync(int projectId, byte take = 10, int? lastRetrievedUserId = null)
     {
-        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+        Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier); ;
+        if (subClaim is null) return Forbid();
 
         Auth auth;
         try
@@ -311,9 +311,19 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         {
             user = await _userRepository.FindAsync(auth.Id);
         }
-        catch (AuthUserIdNotFoundException)
+        catch (AuthNotFoundException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+            return Problem(
+                title: "Auth User ID Not Found",
+                detail: ApiErrorMessages.NoRecordOfAuth0UserId,
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (UserNotFoundException)
+        {
+            return Problem(
+                title: "No Record of User Account",
+                detail: ApiErrorMessages.NoRecordOfUserAccount,
+                statusCode: StatusCodes.Status403Forbidden);
         }
 
         try
@@ -332,15 +342,24 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
                 collaboratorsDtos.Add(collaboratorDto);
             }
 
-            return Ok(collaboratorsDtos);
+            return Ok(new
+            {
+                Data = collaboratorsDtos
+            });
         }
         catch (ProjectNotFoundException)
         {
-            return NotFound(ApiErrorMessages.ProjectNotFound);
+            return Problem(
+                title: "Project Not Found",
+                detail: ApiErrorMessages.ProjectNotFound,
+                statusCode: StatusCodes.Status404NotFound);
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+            return Problem(
+                title: "User Not Project Collaborator",
+                detail: ApiErrorMessages.UserNotProjectCollaborator,
+                statusCode: StatusCodes.Status403Forbidden);
         }
     }
 
