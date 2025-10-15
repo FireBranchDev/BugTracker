@@ -18,9 +18,9 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         
         User assignee = await Context.Users.FindAsync(assigneeUserId) ?? throw new UserNotFoundException();
 
-        if (await Context.Entry(assignee).Collection(a => a.AssignedBugs).Query().Where(x => x.Id == bug.Id).AnyAsync()) throw new CollaboratorAlreadyAssignedBug();
+        if (await Context.Entry(assignee).Collection(a => a.Bugs).Query().Where(x => x.Id == bug.Id).AnyAsync()) throw new CollaboratorAlreadyAssignedBug();
 
-        assignee.AssignedBugs.Add(bug);
+        assignee.Bugs.Add(bug);
         await Context.SaveChangesAsync();
     }
 
@@ -31,13 +31,10 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, projectId, userId, ProjectPermissionType.CreateBug)) throw new InsufficientPermissionToCreateBugException();
         Bug bug = new()
         {
-            Title = title
-        };
-        foundProject.Bugs.Add(new Bug
-        {
             Title = title,
             Description = description
-        });
+        };
+        foundProject.Bugs.Add(bug);
         await Context.SaveChangesAsync();
     }
 
@@ -68,7 +65,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
 
         return await Context.Entry(bug)
-            .Collection(c => c.AssignedUsers)
+            .Collection(c => c.Users)
             .Query()
             .ToListAsync();
     }
@@ -84,10 +81,10 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!await ProjectRepository.HasPermissionToPerformActionAsync(Context, project.Id, userId, ProjectPermissionType.UnassignCollaboratorFromBug))
             throw new InsufficientPermissionToUnassignCollaboratorFromBugException();
 
-        if (!await Context.Entry(bug).Collection(c => c.BugAssignees).Query().Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).AnyAsync())
+        if (!await Context.Entry(bug).Collection(c => c.BugUsers).Query().Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).AnyAsync())
             throw new CollaboratorNotAssignedToBugException();
 
-        await Context.Entry(bug).Collection(c => c.BugAssignees).Query()
+        await Context.Entry(bug).Collection(c => c.BugUsers).Query()
             .Where(c => c.BugId == bugId && c.UserId == assignedCollaboratorUserId).ExecuteDeleteAsync();
     }
 
@@ -99,7 +96,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
         if (!await Context.Users.AnyAsync(x => x.Id == userId)) throw new UserNotFoundException();
         if (!await Context.Projects.AnyAsync(c => c.Bugs.Contains(bug) && c.Users.Contains(user))) throw new UserNotProjectCollaboratorException();
         if (!await Context.Bugs.AnyAsync(x => x.Id == bugId
-            && x.BugAssignees.Any(x => x.UserId == userId))) throw new UserNotAssignedToBugException();
+            && x.BugUsers.Any(x => x.UserId == userId))) throw new UserNotAssignedToBugException();
 
         // Check if user has permissions to update the status
         int? updateStatusBugPermissionId = await Context.BugPermissions.Where(x => x.Type == BugPermissionType.UpdateStatus).Select(x => x.Id).SingleOrDefaultAsync();

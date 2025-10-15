@@ -1,9 +1,11 @@
-﻿namespace BackendClassLib.Database.Models;
+﻿using Azure;
 
-public class ProjectUser
+namespace BackendClassLib.Database.Models;
+
+public class ProjectUser : Base
 {
     public int ProjectId { get; set; }
     public int UserId { get; set; }
-
-    public DateTime Joined { get; set; }
+    public Project Project { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

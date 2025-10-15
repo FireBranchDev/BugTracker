@@ -21,9 +21,7 @@ if (owner is null)
 {
     owner = new()
     {
-        Name = "Owner",
-        CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow,
+        Name = "Owner"
     };
     await context.AddAsync(owner);
 
@@ -38,9 +36,7 @@ if (collaborator is null)
 {
     collaborator = new()
     {
-        Name = "Collaborator",
-        CreatedAt = DateTime.UtcNow,
-        UpdatedAt = DateTime.UtcNow,
+        Name = "Collaborator"
     };
     await context.AddAsync(collaborator);
 
@@ -129,11 +125,7 @@ for (int i = 1; i <= NumberOfTestingUsers; i++)
         randomAuthId = RandomAuthId();
     }
 
-    Auth auth = new()
-    {
-        CreatedOn = DateTime.UtcNow,
-        UpdatedOn = DateTime.UtcNow,
-    };
+    Auth auth = new();
 
     auth.UserIds.Add(randomAuthId);
 
@@ -142,9 +134,7 @@ for (int i = 1; i <= NumberOfTestingUsers; i++)
 
     User user = new()
     {
-        DisplayName = $"Testing User {auth.Id}",
-        CreatedOn = DateTime.UtcNow,
-        UpdatedOn = DateTime.UtcNow,
+        DisplayName = $"Testing User {auth.Id}"
     };
 
     auth.User = user;

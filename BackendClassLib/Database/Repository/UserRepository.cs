@@ -14,9 +14,7 @@ public class UserRepository(ApplicationDbContext context) : Repository(context),
         User user = new()
         {
             DisplayName = displayName,
-            CreatedOn = DateTime.UtcNow,
-            UpdatedOn = DateTime.UtcNow,
-            AuthId = authId,
+            AuthId = authId
         };
         await Context.Users.AddAsync(user);
         await Context.SaveChangesAsync();
@@ -62,11 +60,15 @@ public class UserRepository(ApplicationDbContext context) : Repository(context),
         return await Context.Users.Where(u => u.DisplayName.Contains(displayName) && !u.Projects.Any(c => c.Id == excludeFromProjectId)).Take(limit).Order().Select(j => new
         {
             j.Id,
-            j.DisplayName
+            j.DisplayName,
+            j.Created,
+            j.Updated,
         }).Select(x => new BackendClassLib.Models.User
         {
             Id = x.Id,
             DisplayName = x.DisplayName,
+            Created = x.Created,
+            Updated = x.Updated,
         }).ToListAsync();
     }
 

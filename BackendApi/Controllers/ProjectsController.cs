@@ -337,7 +337,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
                     Id = collaborator.UserId,
                     DisplayName = collaborator.DisplayName,
                     IsOwner = await _projectRolesRepository.IsOwnerAsync(projectId, collaborator.UserId),
-                    Joined = collaborator.Joined,
+                    Joined = collaborator.Created,
                 };
                 collaboratorsDtos.Add(collaboratorDto);
             }

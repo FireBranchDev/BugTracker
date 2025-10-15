@@ -15,9 +15,9 @@ public class Bug : Base
 
     public BugStatusType Status { get; set; }
 
-    public List<User> AssignedUsers { get; } = [];
+    public List<User> Users { get; } = [];
 
-    public List<BugAssignee> BugAssignees { get; } = [];
+    public List<BugUser> BugUsers { get; } = [];
 
     public List<BugPermission> BugPermissions { get; } = [];
 

@@ -11,8 +11,6 @@ public class AuthRepository(ApplicationDbContext context) : Repository(context),
         if (await Context.Auths.AnyAsync(c => c.UserIds.Contains(userId))) throw new UsedAuthUserIdException();
         Auth newAuth = new()
         {
-            CreatedOn = DateTime.UtcNow,
-            UpdatedOn = DateTime.UtcNow,
             UserIds = [userId]
         };
         await Context.Auths.AddAsync(newAuth);

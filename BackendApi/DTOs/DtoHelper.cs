@@ -10,8 +10,8 @@ public static class DtoHelper
         {
             Id = x.Id,
             Name = x.Name,
-            CreatedAt = x.CreatedAt,
-            UpdatedAt = x.UpdatedAt,
+            CreatedAt = x.Created,
+            UpdatedAt = x.Updated,
         };
     }
 
@@ -20,8 +20,8 @@ public static class DtoHelper
         return new ProjectPermissionDto()
         {
             Id = x.Id,
-            CreatedOn = x.CreatedOn,
-            UpdatedOn = x.UpdatedOn,
+            CreatedOn = x.Created,
+            UpdatedOn = x.Updated,
             Name = x.Name,
             Description = x.Description,
             Type = x.Type,

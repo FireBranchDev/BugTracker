@@ -2,7 +2,7 @@
 
 namespace BackendClassLib.Database.Models;
 
-public abstract class RoleBase : BaseV2
+public abstract class RoleBase : Base
 {
     [Required]
     [MaxLength(80)]

@@ -1,4 +1,5 @@
-﻿using BackendClassLib.Database.Models;
+﻿using BackendClassLib.Database.Converters;
+using BackendClassLib.Database.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackendClassLib.Database;
@@ -17,15 +18,30 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        DateTimeUtcConverter dateTimeUtcConverter = new();
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime))
+                {
+                    property.SetValueConverter(dateTimeUtcConverter);
+                }
+            }
+        }
+
+        modelBuilder.Entity<Base>().UseTpcMappingStrategy();
+
         modelBuilder.Entity<Project>()
             .HasMany(c => c.Users)
             .WithMany(c => c.Projects)
-            .UsingEntity<ProjectUser>(j => j.Property(e => e.Joined).HasDefaultValueSql("GETUTCDATE()"));
+            .UsingEntity<ProjectUser>();
 
         modelBuilder.Entity<Bug>()
-            .HasMany(c => c.AssignedUsers)
-            .WithMany(c => c.AssignedBugs)
-            .UsingEntity<BugAssignee>();
+            .HasMany(b => b.Users)
+            .WithMany(u => u.Bugs)
+            .UsingEntity<BugUser>();
 
         modelBuilder.Entity<Bug>()
             .HasMany(c => c.BugPermissions)
@@ -36,14 +52,6 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
             .HasMany(c => c.BugPermissions)
             .WithMany(c => c.Users)
             .UsingEntity<BugPermissionUser>();
-
-        modelBuilder.Entity<Bug>()
-            .Property(b => b.CreatedOn)
-            .HasDefaultValueSql("GETUTCDATE()");
-
-        modelBuilder.Entity<Bug>()
-          .Property(b => b.UpdatedOn)
-          .HasDefaultValueSql("GETUTCDATE()");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -55,8 +63,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                 {
                     context.Set<BugPermission>().Add(new BugPermission
                     {
-                        Type = BugPermissionType.UpdateStatus,
-                        CreatedAt = DateTime.UtcNow,
+                        Type = BugPermissionType.UpdateStatus
                     });
                 }
 
@@ -66,9 +73,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Add Collaborator",
                         Description = "A project's permission to allow for adding a collaborator.",
-                        Type = ProjectPermissionType.AddCollaborator,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.AddCollaborator
                     });
                 }
 
@@ -78,9 +83,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Remove Collaborator",
                         Description = "A project's permission to allow for removing a collaborator.",
-                        Type = ProjectPermissionType.RemoveCollaborator,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.RemoveCollaborator
                     });
                 }
 
@@ -90,9 +93,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Delete Bug",
                         Description = "A project's permission to allow for deleting a bug.",
-                        Type = ProjectPermissionType.DeleteBug,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.DeleteBug
                     });
                 }
 
@@ -102,9 +103,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Assign Collaborator to Bug",
                         Description = "A project's permission to allow for assigning a collaborator to a bug.",
-                        Type = ProjectPermissionType.AssignCollaboratorToBug,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.AssignCollaboratorToBug
                     });
                 }
 
@@ -114,9 +113,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Unassign Collaborator from Bug",
                         Description = "A project's permission to allow for unassigning a collaborator from a bug.",
-                        Type = ProjectPermissionType.UnassignCollaboratorFromBug,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.UnassignCollaboratorFromBug
                     });
                 }
 
@@ -126,9 +123,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Delete Project",
                         Description = "A project's permission to allow for deleting a project.",
-                        Type = ProjectPermissionType.DeleteProject,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.DeleteProject
                     });
                 }
 
@@ -138,9 +133,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                     {
                         Name = "Create Bug",
                         Description = "A project's permission to allow for creating a bug.",
-                        Type = ProjectPermissionType.CreateBug,
-                        CreatedOn = DateTime.UtcNow,
-                        UpdatedOn = DateTime.UtcNow,
+                        Type = ProjectPermissionType.CreateBug
                     });
                 }
 

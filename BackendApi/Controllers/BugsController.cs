@@ -433,8 +433,8 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
             Title = bug.Title,
             Description = bug.Description,
             Status = bug.Status,
-            CreatedAt = bug.CreatedOn,
-            UpdatedAt = bug.UpdatedOn,
+            CreatedAt = bug.Created,
+            UpdatedAt = bug.Updated,
         };
     }
 }

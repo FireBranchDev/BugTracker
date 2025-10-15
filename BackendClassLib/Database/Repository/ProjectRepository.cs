@@ -20,9 +20,7 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         Project project = new()
         {
             Name = name,
-            Description = description,
-            CreatedOn = DateTime.UtcNow,
-            UpdatedOn = DateTime.UtcNow,
+            Description = description
         };
         await Context.AddAsync(project);
 
@@ -154,13 +152,13 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         {
             x.Id,
             x.DisplayName,
-            Joined = x.ProjectUsers.Select(x => x.Joined).Single()
+            x.Created,
         }).Select(j => new Collaborator
         {
             UserId = j.Id,
             DisplayName = j.DisplayName,
-            Joined = j.Joined
-        }).Take(take).OrderBy(c => c.Joined).ToListAsync();
+            Created = j.Created,
+        }).Take(take).OrderBy(c => c.Created).ToListAsync();
     }
 
     public async Task<bool> AddCollaboratorsAsync(int projectId, int userId, List<int> userIdsToAdd)
@@ -176,7 +174,7 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         {
             User? userToAdd = await Context.Users.FindAsync(i);
             if (userToAdd == null) return false;
-            project.ProjectUsers.Add(new() { ProjectId = projectId, UserId = userToAdd.Id });
+            project.Users.Add(userToAdd);
             DefaultProjectRole? collaborator = await Context.DefaultProjectRoles.Where(c => c.Name == "Collaborator").Take(1).FirstOrDefaultAsync();
             if (collaborator != null)
             {
