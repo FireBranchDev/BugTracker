@@ -140,4 +140,36 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
                 context.SaveChanges();
             });
     }
+
+    void ManageBaseEntityDateTimeFields()
+    {
+        var entries = ChangeTracker
+           .Entries()
+           .Where(e => e.Entity is Base && (
+                   e.State == EntityState.Added
+                   || e.State == EntityState.Modified));
+
+        foreach (var entityEntry in entries)
+        {
+            ((Base)entityEntry.Entity).Updated = DateTime.Now;
+
+            if (entityEntry.State == EntityState.Added)
+            {
+                ((Base)entityEntry.Entity).Created = DateTime.Now;
+            }
+        }
+    }
+
+
+    public override int SaveChanges()
+    {
+        ManageBaseEntityDateTimeFields();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ManageBaseEntityDateTimeFields();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
 }
