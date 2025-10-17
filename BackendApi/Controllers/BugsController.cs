@@ -75,6 +75,13 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         {
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToCreateBug);
         }
+        catch (UserNotFoundException)
+        {
+            return Problem(
+                title: "User Not Found",
+                detail: ApiErrorMessages.NoRecordOfUserAccount,
+                statusCode: StatusCodes.Status404NotFound);
+        }
 
         return NoContent();
     }
