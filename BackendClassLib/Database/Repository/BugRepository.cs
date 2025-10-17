@@ -34,6 +34,22 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
             Title = title,
             Description = description
         };
+
+
+        var user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
+
+        var bugPermissions = await Context.BugPermissions.ToListAsync();
+
+        foreach (var permission in bugPermissions)
+        {
+            bug.BugPermissionUsers.Add(new BugPermissionUser()
+            {
+                Bug = bug,
+                BugPermission = permission,
+                User = user
+            });
+        }
+
         foundProject.Bugs.Add(bug);
         await Context.SaveChangesAsync();
     }
