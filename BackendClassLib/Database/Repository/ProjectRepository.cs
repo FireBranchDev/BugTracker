@@ -29,7 +29,7 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         foreach (DefaultProjectRole defaultProjectRole in await Context.DefaultProjectRoles.ToListAsync())
             project.DefaultProjectRoles.Add(defaultProjectRole);
 
-        DefaultProjectRole? owner = await Context.DefaultProjectRoles.Where(c => c.Name == "Owner").FirstOrDefaultAsync();
+        DefaultProjectRole? owner = await Context.DefaultProjectRoles.Where(c => c.Name == "Owner").Include(d => d.ProjectPermissions).FirstOrDefaultAsync();
 
         if (owner is not null)
         {
@@ -39,6 +39,16 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
                 Project = project,
                 User = user
             });
+
+            foreach (var permission in owner.ProjectPermissions)
+            {
+                await Context.UserProjectPermissions.AddAsync(new()
+                {
+                    User = user,
+                    Project = project,
+                    ProjectPermission = permission
+                });
+            }
         }
 
         await Context.SaveChangesAsync();
