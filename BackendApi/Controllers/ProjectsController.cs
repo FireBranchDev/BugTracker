@@ -290,8 +290,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
     }
 
     [HttpGet("{projectId}/collaborators")]
-    [ActionName(nameof(GetAllCollaboratorsAsync))]
-    public async Task<ActionResult<List<Models.User>>> GetAllCollaboratorsAsync(int projectId, byte take = 10, int? lastRetrievedUserId = null)
+    public async Task<ActionResult<List<Models.User>>> GetCollaboratorsAsync(int projectId, byte take = 10, int? lastRetrievedUserId = null)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier); ;
         if (subClaim is null) return Forbid();
@@ -332,19 +331,15 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             List<CollaboratorDto> collaboratorsDtos = [];
             foreach (Collaborator collaborator in collaborators)
             {
-                CollaboratorDto collaboratorDto = new()
-                {
-                    Id = collaborator.UserId,
-                    DisplayName = collaborator.DisplayName,
-                    IsOwner = await _projectRolesRepository.IsOwnerAsync(projectId, collaborator.UserId),
-                    Joined = collaborator.Created,
-                };
-                collaboratorsDtos.Add(collaboratorDto);
+                bool isOwner = await _projectRolesRepository.IsOwnerAsync(projectId, user.Id);
+                collaboratorsDtos.Add(ConvertToModel(collaborator, isOwner));
             }
 
             return Ok(new
             {
-                Data = collaboratorsDtos
+                Data = new {
+                    Collaborators = collaboratorsDtos
+                }
             });
         }
         catch (ProjectNotFoundException)
@@ -402,7 +397,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             });
         }
        
-        return CreatedAtAction(nameof(GetAllCollaboratorsAsync), new { projectId }, null);
+        return CreatedAtAction(nameof(GetCollaboratorsAsync), new { projectId }, null);
     }
 
     public static Project ConvertToModel(BackendClassLib.Database.Models.Project project)
@@ -421,6 +416,17 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         {
             Id = user.Id,
             DisplayName = user.DisplayName
+        };
+    }
+
+    public static CollaboratorDto ConvertToModel(Collaborator collaborator, bool isOwner)
+    {
+        return new()
+        {
+            Id = collaborator.UserId,
+            DisplayName = collaborator.DisplayName,
+            IsOwner = isOwner,
+            Joined = collaborator.Created,
         };
     }
 }
