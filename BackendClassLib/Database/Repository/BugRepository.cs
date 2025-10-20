@@ -71,7 +71,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Project foundProject = await Context.Projects.Include(c => c.Users).Include(c => c.Bugs).FirstOrDefaultAsync(x => x.Id == projectId) ?? throw new ProjectNotFoundException();
         if (!foundProject.Users.Any(c => c.Id == userId)) throw new UserNotProjectCollaboratorException();
-        return foundProject.Bugs.ToList();
+        return foundProject.Bugs;
     }
 
     public async Task<List<User>> GetAssignedCollaborators(int bugId, int userId)
