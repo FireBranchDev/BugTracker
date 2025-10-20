@@ -90,7 +90,10 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     public async Task<IActionResult> GetBugs(int projectId)
     {
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null) return Problem(
+            title: "Missing Sub Claim",
+            detail: ApiErrorMessages.MissingSubClaim,
+            statusCode: StatusCodes.Status403Forbidden);
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -109,7 +112,10 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.NoRecordOfUserAccount);
+            return Problem(
+                title: "User Not Found",
+                detail: ApiErrorMessages.NoRecordOfUserAccount,
+                statusCode: StatusCodes.Status403Forbidden);
         }
 
         BackendClassLib.Database.Models.Project project;
@@ -119,21 +125,36 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (ProjectNotFoundException)
         {
-            return NotFound(ApiErrorMessages.ProjectNotFound);
+            return Problem(
+                title: "Project Not Found",
+                detail: ApiErrorMessages.ProjectNotFound,
+                statusCode: StatusCodes.Status404NotFound);
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+            return Problem(
+                title: "User Not Project Collaborator",
+                detail: ApiErrorMessages.UserNotProjectCollaborator,
+                statusCode: StatusCodes.Status403Forbidden);
         }
 
         try
         {
             List<BackendClassLib.Database.Models.Bug> bugs = await _bugRepository.GetBugsAsync(projectId, user.Id);
-            return Ok(bugs.Select(Convert).ToList());
+            return Ok(new
+            {
+                Data = new
+                {
+                    Bugs = bugs.Select(ConvertToDto).ToList()
+                }
+            });
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return BadRequest(ApiErrorMessages.UserNotProjectCollaborator);
+            return Problem(
+                title: "User Not Project Collaborator",
+                detail: ApiErrorMessages.UserNotProjectCollaborator,
+                statusCode: StatusCodes.Status403Forbidden);
         }
     }
 
@@ -420,7 +441,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         try
         {
             BackendClassLib.Database.Models.Bug bug = await _bugRepository.FindBugAsync(bugId, user.Id);
-            return Ok(Convert(bug));
+            return Ok(ConvertToDto(bug));
         }
         catch (BugNotFoundException)
         {
@@ -432,7 +453,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
     }
 
-    static BugDto Convert(BackendClassLib.Database.Models.Bug bug)
+    static BugDto ConvertToDto(BackendClassLib.Database.Models.Bug bug)
     {
         return new()
         {
