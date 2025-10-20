@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BackendClassLib.Database;
 
-public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
+public class ApplicationDbContext(DbContextOptions options) : DbContext(options), IUnitOfWork
 {
     public DbSet<Auth> Auths { get; set; } = null!;
     public virtual DbSet<User> Users { get; set; } = null!;

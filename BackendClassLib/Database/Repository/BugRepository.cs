@@ -6,6 +6,8 @@ namespace BackendClassLib.Database.Repository;
 
 public class BugRepository(ApplicationDbContext context) : Repository(context), IBugRepository
 {
+    private readonly ApplicationDbContext _context = context;
+
     public async Task AssignCollaboratorToBugAsync(int bugId, int userId, int assigneeUserId)
     {
         Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
@@ -152,6 +154,17 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
     {
         Bug bug = await Context.Bugs.FindAsync(bugId) ?? throw new BugNotFoundException();
         if (!await ProjectRepository.IsCollaboratorAsync(Context, bug.ProjectId, userId)) throw new UserNotProjectCollaboratorException();
+        return bug;
+    }
+
+    public Bug Add(Bug bug)
+    {
+        return _context.Bugs.Add(bug).Entity;
+    }
+
+    public Bug AddUser(Bug bug, User user)
+    {
+        bug.Users.Add(user);
         return bug;
     }
 }

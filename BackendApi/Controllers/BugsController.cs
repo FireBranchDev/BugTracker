@@ -14,12 +14,18 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class BugsController(IAuthRepository authRepository, IUserRepository userRepository, IProjectRepository projectRepository, IBugRepository bugRepository) : ControllerBase
+public class BugsController(IAuthRepository authRepository, IUserRepository userRepository, IProjectRepository projectRepository,
+    IBugRepository bugRepository, IBugPermissionRepository bugPermissionRepository,
+    IBugPermissionUserRepository bugPermissionUserRepository,
+    IRepository repository) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
     readonly IUserRepository _userRepository = userRepository;
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IBugRepository _bugRepository = bugRepository;
+    readonly IBugPermissionRepository _bugPermissionRepository = bugPermissionRepository;
+    readonly IBugPermissionUserRepository _bugPermissionUserRepository = bugPermissionUserRepository;
+    readonly IRepository _repository = repository;
 
     [HttpPost("{projectId}")]
     public async Task<IActionResult> CreateBug(int projectId, Bug bug)
@@ -65,7 +71,27 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
 
         try
         {
-            await _bugRepository.CreateBugAsync(foundProject.Id, user.Id, bug.Title, bug.Description);
+            var createdBug = _bugRepository.Add(new BackendClassLib.Database.Models.Bug()
+            {
+                Title = bug.Title,
+                Description = bug.Description,
+                Project = foundProject,
+            });
+
+            createdBug = _bugRepository.AddUser(createdBug, user);
+
+            var bugPermissions = await _bugPermissionRepository.GetAllAsync();
+            foreach (var permission in bugPermissions)
+            {
+                _bugPermissionUserRepository.Add(new()
+                {
+                    Bug = createdBug,
+                    BugPermission = permission,
+                    User = user
+                });
+            }
+
+            await _repository.UnitOfWork.SaveChangesAsync();
         }
         catch (UserNotProjectCollaboratorException)
         {

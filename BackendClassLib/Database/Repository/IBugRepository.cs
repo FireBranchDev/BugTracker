@@ -13,4 +13,8 @@ public interface IBugRepository
     Task UpdateStatusAsync(int bugId, int userId, BugStatusType bugStatus);
     Task<int> GetBugProjectIdAsync(int bugId);
     Task<Bug> FindBugAsync(int bugId, int userId);
+    Bug Add(Bug bug);
+    Bug AddUser(Bug bug, User user);
+
+    IUnitOfWork UnitOfWork { get; }
 }

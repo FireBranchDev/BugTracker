@@ -1,6 +1,14 @@
 ﻿namespace BackendClassLib.Database.Repository;
 
-public abstract class Repository(ApplicationDbContext context)
+public class Repository(ApplicationDbContext context) : IRepository
 {
     public ApplicationDbContext Context => context;
+
+    public IUnitOfWork UnitOfWork
+    {
+        get
+        {
+            return context;
+        }
+    }
 }
