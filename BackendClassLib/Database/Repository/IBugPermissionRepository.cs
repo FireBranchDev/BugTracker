@@ -2,7 +2,7 @@
 
 namespace BackendClassLib.Database.Repository;
 
-public interface IBugPermissionRepository
+public interface IBugPermissionRepository : IRepository
 {
     public Task<List<BugPermission>> GetAllAsync();
 }

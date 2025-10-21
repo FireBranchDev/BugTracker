@@ -44,7 +44,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
 
         foreach (var permission in bugPermissions)
         {
-            bug.BugPermissionUsers.Add(new BugPermissionUser()
+            Context.BugBugPermissionUsers.Add(new()
             {
                 Bug = bug,
                 BugPermission = permission,
@@ -133,7 +133,7 @@ public class BugRepository(ApplicationDbContext context) : Repository(context), 
             int? updateStatusBugPermissionId = await Context.BugPermissions.Where(x => x.Type == BugPermissionType.UpdateStatus).Select(x => x.Id).SingleOrDefaultAsync();
             if (updateStatusBugPermissionId is null || updateStatusBugPermissionId == 0) throw new BugPermissionNotFoundException();
 
-            hasPermission = await Context.BugPermissionUsers.Where(x => x.BugId == bugId)
+            hasPermission = await Context.BugBugPermissionUsers.Where(x => x.BugId == bugId)
                 .Where(x => x.UserId == userId)
                 .Where(x => x.BugPermissionId == updateStatusBugPermissionId)
                 .AnyAsync();

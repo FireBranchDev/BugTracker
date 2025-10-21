@@ -2,7 +2,7 @@
 
 namespace BackendClassLib.Database.Repository;
 
-public interface IBugRepository
+public interface IBugRepository : IRepository
 {
     Task CreateBugAsync(int projectId, int userId, string title, string? description);
     Task<List<Bug>> GetBugsAsync(int projectId, int userId);
@@ -15,6 +15,4 @@ public interface IBugRepository
     Task<Bug> FindBugAsync(int bugId, int userId);
     Bug Add(Bug bug);
     Bug AddUser(Bug bug, User user);
-
-    IUnitOfWork UnitOfWork { get; }
 }

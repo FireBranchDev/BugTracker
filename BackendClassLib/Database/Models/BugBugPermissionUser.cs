@@ -1,6 +1,6 @@
 ﻿namespace BackendClassLib.Database.Models;
 
-public class BugPermissionUser : Base
+public class BugBugPermissionUser : Base
 {
     public int BugId { get; set; }
     public Bug Bug { get; set; } = null!;

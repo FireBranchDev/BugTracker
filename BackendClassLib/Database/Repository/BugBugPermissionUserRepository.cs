@@ -2,7 +2,7 @@
 
 namespace BackendClassLib.Database.Repository;
 
-public class BugPermissionUserRepository(ApplicationDbContext context) : IBugPermissionUserRepository
+public class BugBugPermissionUserRepository(ApplicationDbContext context) : IBugBugPermissionUserRepository
 {
     private readonly ApplicationDbContext _context = context;
 
@@ -14,9 +14,9 @@ public class BugPermissionUserRepository(ApplicationDbContext context) : IBugPer
         }
     }
 
-    public BugPermissionUser Add(BugPermissionUser bugPermissionUser)
+    public BugBugPermissionUser Add(BugBugPermissionUser bugPermissionUser)
     {
-        _context.BugPermissionUsers.Add(bugPermissionUser);
+        _context.BugBugPermissionUsers.Add(bugPermissionUser);
         return bugPermissionUser;
     }
 }

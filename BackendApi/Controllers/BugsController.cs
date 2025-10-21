@@ -16,7 +16,7 @@ namespace BackendApi.Controllers;
 [Authorize]
 public class BugsController(IAuthRepository authRepository, IUserRepository userRepository, IProjectRepository projectRepository,
     IBugRepository bugRepository, IBugPermissionRepository bugPermissionRepository,
-    IBugPermissionUserRepository bugPermissionUserRepository,
+    IBugBugPermissionUserRepository bugPermissionUserRepository,
     IRepository repository) : ControllerBase
 {
     readonly IAuthRepository _authRepository = authRepository;
@@ -24,7 +24,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     readonly IProjectRepository _projectRepository = projectRepository;
     readonly IBugRepository _bugRepository = bugRepository;
     readonly IBugPermissionRepository _bugPermissionRepository = bugPermissionRepository;
-    readonly IBugPermissionUserRepository _bugPermissionUserRepository = bugPermissionUserRepository;
+    readonly IBugBugPermissionUserRepository _bugPermissionUserRepository = bugPermissionUserRepository;
     readonly IRepository _repository = repository;
 
     [HttpPost("{projectId}")]

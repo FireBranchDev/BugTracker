@@ -13,7 +13,7 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
     public virtual DbSet<UserProjectPermission> UserProjectPermissions { get; set; } = null!;
     public virtual DbSet<Bug> Bugs { get; set; } = null!;
     public virtual DbSet<BugPermission> BugPermissions { get; set; } = null!;
-    public virtual DbSet<BugPermissionUser> BugPermissionUsers { get; set; } = null!;
+    public virtual DbSet<BugBugPermissionUser> BugBugPermissionUsers { get; set; } = null!;
     public DbSet<DefaultProjectRole> DefaultProjectRoles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,15 +43,14 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
             .WithMany(u => u.Bugs)
             .UsingEntity<BugUser>();
 
-        modelBuilder.Entity<Bug>()
-            .HasMany(c => c.BugPermissions)
-            .WithMany(c => c.Bugs)
-            .UsingEntity<BugPermissionUser>();
+        modelBuilder.Entity<BugBugPermissionUser>()
+             .HasOne(b => b.Bug);
 
-        modelBuilder.Entity<User>()
-            .HasMany(c => c.BugPermissions)
-            .WithMany(c => c.Users)
-            .UsingEntity<BugPermissionUser>();
+        modelBuilder.Entity<BugBugPermissionUser>()
+            .HasOne(b => b.BugPermission);
+
+        modelBuilder.Entity<BugBugPermissionUser>()
+            .HasOne(b => b.User);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

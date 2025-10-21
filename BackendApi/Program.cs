@@ -41,7 +41,7 @@ builder.Services.AddScoped<IProjectDefaultRolesRepository, ProjectDefaultRolesRe
 builder.Services.AddScoped<IProjectRolesRepository, ProjectRolesRepository>();
 builder.Services.AddScoped<IRepository, Repository>();
 builder.Services.AddScoped<IBugPermissionRepository, BugPermissionRepository>();
-builder.Services.AddScoped<IBugPermissionUserRepository, BugPermissionUserRepository>();
+builder.Services.AddScoped<IBugBugPermissionUserRepository, BugBugPermissionUserRepository>();
 
 builder.Services.AddSingleton<IUserService, UserService>();
 
