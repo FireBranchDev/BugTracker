@@ -31,8 +31,6 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
             }
         }
 
-        modelBuilder.Entity<Base>().UseTpcMappingStrategy();
-
         modelBuilder.Entity<Project>()
             .HasMany(c => c.Users)
             .WithMany(c => c.Projects)

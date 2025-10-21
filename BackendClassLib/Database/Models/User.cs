@@ -1,11 +1,13 @@
-﻿namespace BackendClassLib.Database.Models;
+﻿using System.Reflection.Metadata;
+
+namespace BackendClassLib.Database.Models;
 
 public class User : Base
 {
     public string DisplayName { get; set; } = null!;
 
-    public int AuthId { get; set; }
-    public Auth Auth { get; set; } = null!;
+    public int? AuthId { get; set; }
+    public Auth? Auth { get; set; }
 
     public List<Project> Projects { get; } = [];
 
