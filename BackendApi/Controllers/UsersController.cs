@@ -13,10 +13,10 @@ namespace BackendApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class UsersController(AuthRepository authRepo, UserRepository userRepo) : ControllerBase
+public class UsersController(IAuthRepository authRepo, IUserRepository userRepo) : ControllerBase
 {
-    readonly AuthRepository _authRepo = authRepo;
-    readonly UserRepository _userRepo = userRepo;
+    readonly IAuthRepository _authRepo = authRepo;
+    readonly IUserRepository _userRepo = userRepo;
 
     [HttpPost]
     public async Task<IActionResult> Post(Models.User user)
