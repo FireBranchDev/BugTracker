@@ -7,7 +7,7 @@ namespace BackendClassLib.Database.Repository;
 
 public class UserRepository(ApplicationDbContext context) : Repository(context), IUserRepository
 {
-    public async Task AddAsync(string displayName, int authId)
+    public async Task<User> AddAsync(string displayName, int authId)
     {
         if (!await Context.Auths.AnyAsync(c => c.Id == authId)) throw new AuthNotFoundException();
         if (await Context.Users.AnyAsync(c => c.AuthId == authId)) throw new ExistingUserAccountException();
@@ -16,8 +16,8 @@ public class UserRepository(ApplicationDbContext context) : Repository(context),
             DisplayName = displayName,
             AuthId = authId
         };
-        await Context.Users.AddAsync(user);
-        await Context.SaveChangesAsync();
+        var result = await Context.Users.AddAsync(user);
+        return result.Entity;
     }
 
     public async Task<User> FindAsync(int authId)

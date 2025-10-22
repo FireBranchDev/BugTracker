@@ -2,9 +2,9 @@
 
 namespace BackendClassLib.Database.Repository;
 
-public interface IUserRepository
+public interface IUserRepository : IRepository
 {
-    Task AddAsync(string displayName, int authId);
+    Task<User> AddAsync(string displayName, int authId);
     Task<User> FindAsync(int authId);
     Task UpdateDisplayNameAsync(int userId, string displayName);
     Task<List<User>> SearchByDisplayNameAsync(string displayName, byte limit, uint? lastSeenUserId);

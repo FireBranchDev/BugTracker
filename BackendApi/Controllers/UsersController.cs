@@ -45,10 +45,16 @@ public class UsersController(IAuthRepository authRepo, IUserRepository userRepo)
             {
                 return ValidationProblem();
             }
-            await _userRepo.AddAsync(user.DisplayName, auth.Id);
+            var result = await _userRepo.AddAsync(user.DisplayName, auth.Id);
+            await _userRepo.UnitOfWork.SaveChangesAsync();
+            return Ok(new
+            {
+                Data = new
+                {
+                    CreatedUser = ConvertToDto(result)
+                }
+            });
         }
-
-        return NoContent();
     }
 
     [HttpGet]
@@ -97,5 +103,14 @@ public class UsersController(IAuthRepository authRepo, IUserRepository userRepo)
         {
             yield return new UserDto { Id = user.Id, DisplayName = user.DisplayName };
         }
+    }
+
+    static UserDto ConvertToDto(User user)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            DisplayName = user.DisplayName
+        };
     }
 }
