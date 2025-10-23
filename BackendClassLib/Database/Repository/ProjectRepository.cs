@@ -69,8 +69,19 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         bool hasPermission = await HasPermissionToPerformActionAsync(projectId, userId, ProjectPermissionType.AddCollaborator);
         if (!hasPermission) throw new InsufficientPermissionToAddCollaboratorException();
 
+        DefaultProjectRole collaboratorRole = await Context.DefaultProjectRoles.Where(c => c.Name == "Collaborator").FirstOrDefaultAsync() ?? throw new ProjectDefaultRoleNotFoundException();
+
         User collaboratorToAdd = await Context.Users.FirstAsync(c => c.Id == userIdOfCollaboratorToAdd);
+
         project.Users.Add(collaboratorToAdd);
+
+        project.DefaultProjectRoleProjectUsers.Add(new()
+        {
+            DefaultProjectRole = collaboratorRole,
+            Project = project,
+            User = collaboratorToAdd
+        });
+
         await Context.SaveChangesAsync();
     }
 

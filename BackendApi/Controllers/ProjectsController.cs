@@ -230,6 +230,11 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
         {
             return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToAddProjectCollaborator);
         }
+        catch (ProjectDefaultRoleNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
         
         return NoContent();
     }
