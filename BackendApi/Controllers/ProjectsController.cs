@@ -331,7 +331,7 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
             List<CollaboratorDto> collaboratorsDtos = [];
             foreach (Collaborator collaborator in collaborators)
             {
-                bool isOwner = await _projectRolesRepository.IsOwnerAsync(projectId, user.Id);
+                bool isOwner = await _projectRolesRepository.IsOwnerAsync(projectId, collaborator.UserId);
                 collaboratorsDtos.Add(ConvertToModel(collaborator, isOwner));
             }
 
@@ -355,6 +355,11 @@ public class ProjectsController(IAuthRepository authRepository, IProjectReposito
                 title: "User Not Project Collaborator",
                 detail: ApiErrorMessages.UserNotProjectCollaborator,
                 statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (ProjectDefaultRoleNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
