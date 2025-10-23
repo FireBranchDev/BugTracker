@@ -148,10 +148,7 @@ public class ProjectRepository(ApplicationDbContext context, IProjectPermissionR
         User user = await Context.Users.FindAsync(userId) ?? throw new UserNotFoundException();
         if (!await Context.Entry(project).Collection(c => c.Users).Query().Where(x => x.Id == userId).AnyAsync()) throw new UserNotProjectCollaboratorException();
 
-        DefaultProjectRole owner = await Context.DefaultProjectRoles.Where(c => c.Name == "Owner").FirstAsync();
-
-        IQueryable<User> retrieveCollaboratorsQuery = Context.Entry(project).Collection(c => c.Users).Query().Include(c => c.ProjectUsers)
-            .Where(x => !x.DefaultProjectRoleProjectUsers.Any(c => c.DefaultProjectRole == owner && c.UserId == x.Id && c.ProjectId == project.Id));
+        IQueryable<User> retrieveCollaboratorsQuery = Context.Entry(project).Collection(c => c.Users).Query().Include(c => c.ProjectUsers);
 
         if (lastRetrievedUserId != null)
         {
