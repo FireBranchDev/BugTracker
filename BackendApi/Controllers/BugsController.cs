@@ -4,8 +4,12 @@ using BackendClassLib;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
+using JsonApiSerializer;
+using JsonApiSerializer.JsonApi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Newtonsoft.Json;
 using System.Net;
 using System.Security.Claims;
 
@@ -28,12 +32,45 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     readonly IRepository _repository = repository;
 
     [HttpPost("{projectId}")]
-    public async Task<IActionResult> CreateBug(int projectId, Bug bug)
+    public async Task<IActionResult> CreateBug(int projectId)
     {
-        if (!ModelState.IsValid) return ValidationProblem();
+        var requestBody = await Request.Body.ReadAsStringAsync();
+
+        var bug = JsonConvert.DeserializeObject<Bug>(requestBody, new JsonApiSerializerSettings());
+        if (bug == null)
+        {
+            return BadRequest(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "Missing attributes",
+                        Detail = "You must provide attributes"
+                    }, new JsonApiSerializerSettings()
+                )
+            );
+        }
+
+        if (bug.Title == null)
+        {
+            Error error = new()
+            {
+                Title = "Title is required",
+                Detail = "You must provide a title."
+            };
+            return BadRequest(JsonConvert.SerializeObject(error, new JsonApiSerializerSettings()));
+        }
 
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
-        if (subClaim is null) return Unauthorized(ApiErrorMessages.MissingSubClaim);
+        if (subClaim is null)
+        {
+            return Unauthorized(
+                JsonConvert.SerializeObject(new Error()
+                {
+                    Title = "Missing Sub Claim",
+                    Detail = ApiErrorMessages.MissingSubClaim
+                }, new JsonApiSerializerSettings())
+            );
+        }
 
         BackendClassLib.Database.Models.Auth auth;
         try
@@ -52,7 +89,13 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return BadRequest(ApiErrorMessages.NoRecordOfUserAccount);
+            return NotFound(
+                JsonConvert.SerializeObject(new Error()
+                {
+                    Title = "User Not Found",
+                    Detail = ApiErrorMessages.NoRecordOfUserAccount
+                }, new JsonApiSerializerSettings())
+            );
         }
 
         BackendClassLib.Database.Models.Project foundProject;
@@ -62,11 +105,27 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (ProjectNotFoundException)
         {
-            return NotFound(ApiErrorMessages.ProjectNotFound);
+            return NotFound(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "Project Not Found",
+                        Detail = ApiErrorMessages.ProjectNotFound
+                    }, new JsonApiSerializerSettings()
+                )
+            );
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+            return StatusCode((int)HttpStatusCode.Forbidden,
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "User Not Project Collaborator",
+                        Detail = ApiErrorMessages.UserNotProjectCollaborator
+                    }, new JsonApiSerializerSettings()
+                )
+            );
         }
 
         try
@@ -92,24 +151,54 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
             }
 
             await _repository.UnitOfWork.SaveChangesAsync();
+
+            return Ok(
+                JsonConvert.SerializeObject(
+                    new Bug()
+                    {
+                        Id = createdBug.Id.ToString(),
+                        Title = createdBug.Title,
+                        Description = createdBug.Description,
+                    }, new JsonApiSerializerSettings()
+                )
+            );
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.UserNotProjectCollaborator);
+            return StatusCode((int)HttpStatusCode.Forbidden,
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "User Not Project Collaborator",
+                        Detail = ApiErrorMessages.UserNotProjectCollaborator
+                    }, new JsonApiSerializerSettings()
+                )
+            );
         }
         catch (InsufficientPermissionToCreateBugException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, ApiErrorMessages.InsufficientPermissionToCreateBug);
+            return StatusCode((int)HttpStatusCode.Forbidden, 
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "Insufficient Permission To Create Bug",
+                        Detail = ApiErrorMessages.InsufficientPermissionToCreateBug
+                    }
+                )
+            );
         }
         catch (UserNotFoundException)
         {
-            return Problem(
-                title: "User Not Found",
-                detail: ApiErrorMessages.NoRecordOfUserAccount,
-                statusCode: StatusCodes.Status404NotFound);
+            return NotFound(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "User Not Found",
+                        Detail = ApiErrorMessages.NoRecordOfUserAccount
+                    }, new JsonApiSerializerSettings()
+                )
+            );
         }
-
-        return NoContent();
     }
 
     [HttpGet("{projectId}")]

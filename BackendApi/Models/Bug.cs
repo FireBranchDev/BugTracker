@@ -4,7 +4,7 @@ namespace BackendApi.Models;
 
 public class Bug
 {
-    [Required]
-    public string Title { get; set; } = null!;
+    public string? Id { get; set; }
+    public string? Title { get; set; }
     public string? Description { get; set; }
 }
