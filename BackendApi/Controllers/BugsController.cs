@@ -1,17 +1,17 @@
 ﻿using BackendApi.DTOs;
-using BackendApi.Models;
 using BackendClassLib;
 using BackendClassLib.Database.Repository;
 using ClassLib;
 using ClassLib.Exceptions;
 using JsonApiSerializer;
+using JsonApiSerializer.Exceptions;
 using JsonApiSerializer.JsonApi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Newtonsoft.Json;
 using System.Net;
 using System.Security.Claims;
+using JsonApiBugDto = BackendApi.DTOs.JsonApi.BugDto;
 
 namespace BackendApi.Controllers;
 
@@ -32,44 +32,24 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
     readonly IRepository _repository = repository;
 
     [HttpPost("{projectId}")]
+    [Consumes("application/vnd.api+json")]
+    [Produces("application/vnd.api+json")]
     public async Task<IActionResult> CreateBug(int projectId)
     {
-        var requestBody = await Request.Body.ReadAsStringAsync();
-
-        var bug = JsonConvert.DeserializeObject<Bug>(requestBody, new JsonApiSerializerSettings());
-        if (bug == null)
-        {
-            return BadRequest(
-                JsonConvert.SerializeObject(
-                    new Error()
-                    {
-                        Title = "Missing attributes",
-                        Detail = "You must provide attributes"
-                    }, new JsonApiSerializerSettings()
-                )
-            );
-        }
-
-        if (bug.Title == null)
-        {
-            Error error = new()
-            {
-                Title = "Title is required",
-                Detail = "You must provide a title."
-            };
-            return BadRequest(JsonConvert.SerializeObject(error, new JsonApiSerializerSettings()));
-        }
+        var jsonApiSerializerSettings = new JsonApiSerializerSettings();
 
         Claim? subClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type is ClaimTypes.NameIdentifier);
         if (subClaim is null)
         {
-            return Unauthorized(
+            var content = Content(
                 JsonConvert.SerializeObject(new Error()
                 {
                     Title = "Missing Sub Claim",
                     Detail = ApiErrorMessages.MissingSubClaim
-                }, new JsonApiSerializerSettings())
+                }, jsonApiSerializerSettings)
             );
+            content.StatusCode = StatusCodes.Status401Unauthorized;
+            return content;
         }
 
         BackendClassLib.Database.Models.Auth auth;
@@ -89,13 +69,15 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (UserNotFoundException)
         {
-            return NotFound(
+            var content = Content(
                 JsonConvert.SerializeObject(new Error()
                 {
                     Title = "User Not Found",
                     Detail = ApiErrorMessages.NoRecordOfUserAccount
-                }, new JsonApiSerializerSettings())
+                }, jsonApiSerializerSettings)
             );
+            content.StatusCode = StatusCodes.Status404NotFound;
+            return content;
         }
 
         BackendClassLib.Database.Models.Project foundProject;
@@ -105,35 +87,106 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
         catch (ProjectNotFoundException)
         {
-            return NotFound(
+            var content = Content(
                 JsonConvert.SerializeObject(
                     new Error()
                     {
                         Title = "Project Not Found",
                         Detail = ApiErrorMessages.ProjectNotFound
-                    }, new JsonApiSerializerSettings()
+                    }, jsonApiSerializerSettings
                 )
             );
+            content.StatusCode = StatusCodes.Status404NotFound;
+            return content;
         }
         catch (UserNotProjectCollaboratorException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden,
+            var content = Content(
                 JsonConvert.SerializeObject(
                     new Error()
                     {
                         Title = "User Not Project Collaborator",
                         Detail = ApiErrorMessages.UserNotProjectCollaborator
-                    }, new JsonApiSerializerSettings()
+                    }, jsonApiSerializerSettings
                 )
             );
+            content.StatusCode = StatusCodes.Status403Forbidden;
+            return content;
+        }
+
+        var requestBody = await Request.Body.ReadAsStringAsync();
+
+        DocumentRoot<BugDto>? bug;
+        try
+        {
+            bug = JsonConvert.DeserializeObject<DocumentRoot<BugDto>>(requestBody, jsonApiSerializerSettings);
+        }
+        catch (JsonApiFormatException ex)
+        {
+            var content = Content(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = ex.Message
+                    },
+                    jsonApiSerializerSettings
+                )
+            );
+            content.StatusCode = StatusCodes.Status403Forbidden;
+            return content;
+        }
+
+        if (bug == null)
+        {
+            var content = Content(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "Invalid Document Structure"
+                    },
+                    jsonApiSerializerSettings
+                )
+            );
+            content.StatusCode = StatusCodes.Status400BadRequest;
+            return content;
+        }
+
+        if (bug.Data == null)
+        {
+            var content = Content(
+                JsonConvert.SerializeObject(
+                    new Error()
+                    {
+                        Title = "Missing Document's Primary Data"
+                    },
+                    jsonApiSerializerSettings
+                )
+            );
+            content.StatusCode = StatusCodes.Status400BadRequest;
+            return content;
+        }
+
+        if (bug.Data.Title == null)
+        {
+            var content = Content(
+               JsonConvert.SerializeObject(
+                   new Error()
+                   {
+                       Title = "A Title Attribute is Required"
+                   },
+                   jsonApiSerializerSettings
+               )
+            );
+            content.StatusCode = StatusCodes.Status400BadRequest;
+            return content;
         }
 
         try
         {
             var createdBug = _bugRepository.Add(new BackendClassLib.Database.Models.Bug()
             {
-                Title = bug.Title,
-                Description = bug.Description,
+                Title = bug.Data.Title,
+                Description = bug.Data.Description,
                 Project = foundProject,
             });
 
@@ -152,16 +205,22 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
 
             await _repository.UnitOfWork.SaveChangesAsync();
 
-            return Ok(
+            HttpContext.Response.Headers.Location = $"{Request.Scheme}://{Request.Host}/api/bugs/{createdBug.Id}/find";
+
+            var content = base.Content(
                 JsonConvert.SerializeObject(
-                    new Bug()
+                    new JsonApiBugDto()
                     {
                         Id = createdBug.Id.ToString(),
                         Title = createdBug.Title,
                         Description = createdBug.Description,
-                    }, new JsonApiSerializerSettings()
+                        Created = createdBug.Created,
+                        Updated = createdBug.Updated,
+                    }, jsonApiSerializerSettings
                 )
             );
+            content.StatusCode = StatusCodes.Status201Created;
+            return content;
         }
         catch (UserNotProjectCollaboratorException)
         {
@@ -171,33 +230,38 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
                     {
                         Title = "User Not Project Collaborator",
                         Detail = ApiErrorMessages.UserNotProjectCollaborator
-                    }, new JsonApiSerializerSettings()
+                    }, jsonApiSerializerSettings
                 )
             );
         }
         catch (InsufficientPermissionToCreateBugException)
         {
-            return StatusCode((int)HttpStatusCode.Forbidden, 
+            var content = Content(
                 JsonConvert.SerializeObject(
                     new Error()
                     {
                         Title = "Insufficient Permission To Create Bug",
                         Detail = ApiErrorMessages.InsufficientPermissionToCreateBug
-                    }
+                    },
+                    jsonApiSerializerSettings
                 )
             );
+            content.StatusCode = StatusCodes.Status403Forbidden;
+            return content;
         }
         catch (UserNotFoundException)
         {
-            return NotFound(
+            var content = Content(
                 JsonConvert.SerializeObject(
                     new Error()
                     {
                         Title = "User Not Found",
                         Detail = ApiErrorMessages.NoRecordOfUserAccount
-                    }, new JsonApiSerializerSettings()
+                    }, jsonApiSerializerSettings
                 )
             );
+            content.StatusCode = StatusCodes.Status404NotFound;
+            return content;
         }
     }
 
@@ -568,7 +632,7 @@ public class BugsController(IAuthRepository authRepository, IUserRepository user
         }
     }
 
-    static BugDto ConvertToDto(BackendClassLib.Database.Models.Bug bug)
+    static DTOs.BugDto ConvertToDto(BackendClassLib.Database.Models.Bug bug)
     {
         return new()
         {
