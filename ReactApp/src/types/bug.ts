@@ -1,5 +1,7 @@
 export type Bug = {
-  id: number;
+  id: string;
   title: string;
   description: string | undefined;
+  created: string;
+  updated: string;
 };

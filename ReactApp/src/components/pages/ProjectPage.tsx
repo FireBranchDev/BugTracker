@@ -8,6 +8,7 @@ import ProjectNotFoundException from '../../exceptions/project-not-found-excepti
 import ViewingProjectForbiddenException from '../../exceptions/viewing-project-forbidden-exception';
 import type { Bug } from '../../types/bug';
 import { BugCard } from '../Bug';
+import CreateBugForm from '../Bug/CreateBugForm';
 import Error from '../Error';
 import Loading from '../Loading';
 
@@ -21,6 +22,12 @@ const ProjectPage = () => {
   const [projectName, setProjectName] = useState('');
 
   const navigate = useNavigate();
+
+  const [bugs, setBugs] = useState<Bug[]>([]);
+
+  const addCreatedBug = (bug: Bug) => {
+    setBugs([...bugs, bug]);
+  };
 
   const MAXIMUM_QUERY_RETRY_COUNT = 3;
   const { error, isLoading, data } = useQuery({
@@ -83,7 +90,7 @@ const ProjectPage = () => {
         throw new ProjectNotFoundException();
       }
 
-      return response.json();
+      return await response.json();
     },
     retry: (failureCount: number, error: Error) => {
       if (
@@ -116,6 +123,17 @@ const ProjectPage = () => {
       });
     }
   }, [state, data, error, projectBugsQuery]);
+
+  useEffect(() => {
+    if (
+      projectBugsQuery.data &&
+      projectBugsQuery.data.data &&
+      projectBugsQuery.data.data.bugs &&
+      projectBugsQuery.data.data.bugs.length > 0
+    ) {
+      setBugs([...projectBugsQuery.data.data.bugs]);
+    }
+  }, [projectBugsQuery.data]);
 
   if (isLoading) {
     return <Loading />;
@@ -152,14 +170,22 @@ const ProjectPage = () => {
 
       <Grid container spacing={3} sx={{ m: 4, mt: 2 }}>
         <Grid size={{ xs: 12, sm: 7, lg: 9 }}>
+          <Box component="section">
+            <Typography variant="h4">New Bug</Typography>
+            <CreateBugForm
+              projectId={projectId}
+              addCreatedBug={addCreatedBug}
+            />
+          </Box>
+
           <Box
             component="section"
             sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
           >
             <Typography variant="h4">Bugs</Typography>
-            {(projectBugsQuery.data && projectBugsQuery.data.length > 0 && (
+            {(bugs.length > 0 && (
               <Grid container spacing={1} sx={{ mx: 2 }}>
-                {projectBugsQuery.data.map((bug: Bug) => {
+                {bugs.map((bug: Bug) => {
                   return (
                     <Grid
                       size={{
