@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Outlet } from 'react-router-dom';
 import ButtonAppBar from './components/app-bars/ButtonAppBar.tsx';
 import Auth0ProviderWithRedirectCallback from './components/Auth0ProviderWithRedirectCallback.tsx';
+import AxiosProvider from './components/AxiosProvider/AxiosProvider.tsx';
 
 let theme = createTheme();
 theme = responsiveFontSizes(theme);
@@ -23,8 +24,12 @@ function App() {
     >
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
-          <ButtonAppBar />
-          <Outlet />
+          <AxiosProvider>
+            <>
+              <ButtonAppBar />
+              <Outlet />
+            </>
+          </AxiosProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </Auth0ProviderWithRedirectCallback>
