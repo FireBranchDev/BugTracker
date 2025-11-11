@@ -14,43 +14,59 @@ import {
   type SelectChangeEvent,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import type { AxiosResponse } from 'axios';
 import { useEffect, useState, type FC } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { BugLifecycle } from '../../enums/bug-lifecycle';
+import type { Bug } from '../../types/bug';
+import { useAxios } from '../AxiosProvider/AxiosProvider';
 import { BugStatusChip } from '../Bug';
+import Loading from '../Loading';
+
+type LocationState = {
+  title: string | null;
+  description: string | null;
+};
+
+type FindBugResult = Bug & {
+  description: string | null;
+};
 
 const DetailedBugPage: FC = () => {
   const location = useLocation();
-  const params = useParams();
+  const { bugId } = useParams() as { bugId: string };
 
-  const { bugId } = params;
+  let { title, description } =
+    (location.state as LocationState) ||
+    ({
+      title: null,
+      description: null,
+    } as LocationState);
 
-  let { title, description } = location.state || [undefined, undefined];
+  const axios = useAxios();
+  const fetchBug = async (
+    bugId: string,
+  ): Promise<AxiosResponse<FindBugResult, any>> => {
+    const result = await axios.get(`/bugs/${bugId}/find`);
+    return result;
+  };
 
-  const { getAccessTokenSilently } = useAuth0();
-
-  const { data } = useQuery({
-    queryKey: ['findBug', bugId],
+  const { data, isLoading } = useQuery({
+    queryKey: ['bug', bugId],
     queryFn: async () => {
-      const bug = await fetch(
-        `${import.meta.env.VITE_BUGTRACKER_BACKEND_API_ORIGIN}/api/bugs/${bugId}/find`,
-        {
-          headers: {
-            Authorization: `Bearer ${await getAccessTokenSilently()}`,
-          },
-        },
-      );
-      return await bug.json();
-    },
-    enabled: () => {
-      return title === undefined || description === undefined;
+      const { data } = await fetchBug(bugId);
+      console.log(data);
+      return data;
     },
   });
 
-  if (data) {
-    title = data.title;
-    description = data.description;
-  }
+  useEffect(() => {
+    console.log(data);
+    if (data) {
+      title = data.title;
+      description = data.description;
+    }
+  }, [data]);
 
   const [collaborators, setCollaborators] = useState([
     'Jane Doe',
@@ -88,80 +104,100 @@ const DetailedBugPage: FC = () => {
     console.log(searchForCollaboratorInput);
   }, [searchForCollaboratorInput]);
 
+  const capitaliseText = (text: string) => {
+    return text
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <Box
       sx={{
         m: 1,
       }}
     >
-      <Typography variant="h1" textAlign="center">
-        {title}
-      </Typography>
-      <Typography variant="h6">Description</Typography>
-      {description && <Typography variant="body1">{description}</Typography>}
-      <Typography variant="h6">Status</Typography>
-      <BugStatusChip lifecycle={BugLifecycle.New} />
-      <Typography variant="h6">Created</Typography>
-      <Typography variant="body1">
-        16th September 2025, 1:43 PM UTC+8
-      </Typography>
-      <Typography variant="h6">Updated</Typography>
-      <Typography variant="body1">
-        16th September 2025, 1:46 PM UTC+8
-      </Typography>
-      <Box component="section" width="50%">
-        <Typography variant="h5">Assign Collaborators</Typography>
-        <Stack direction="column" spacing={1.5} mt={1}>
-          <TextField
-            id="collaborators"
-            label="Search for collaborators"
-            variant="outlined"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              let result = collaborators.filter((element, index) => {
-                console.log('filtering through collaborators', element);
-                return element.includes(event.target.value.trim());
-              });
-              console.log('Result after filter', result);
-              setSearchForCollaboratorInput(event.target.value);
-              setFilteredCollaborators(result);
-            }}
-          />
-          {filteredCollaborators.length >= 1 && (
-            <FormControl>
-              <InputLabel id="collaborators-assign-select-label">
-                Select Collaborators
-              </InputLabel>
-              <Select
-                labelId="collaborators-assign-select-label"
-                id="collaborators-assign-select"
-                multiple
-                label="Select Collaborators"
-                value={collaboratorsSelectedToAssign}
-                onChange={onCollaboratorsSelectedToAssignHandleChange}
-              >
-                {filteredCollaborators.map((collaborator, index) => {
-                  return (
-                    <MenuItem key={index} value={`${collaborator}`}>
-                      {collaborator}
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-            </FormControl>
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <>
+          {title && (
+            <Typography variant="h1" textAlign="center">
+              {capitaliseText(title)}
+            </Typography>
           )}
 
-          <Button variant="contained">Assign</Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => {
-              setCollaboratorsSelectedToAssign([]);
-            }}
-          >
-            Clear Selected
-          </Button>
-        </Stack>
-      </Box>
+          <Typography variant="h6">Description</Typography>
+          {description ? (
+            <Typography variant="body1">{description}</Typography>
+          ) : (
+            <Typography variant="body1">No description</Typography>
+          )}
+          <Typography variant="h6">Status</Typography>
+          <BugStatusChip lifecycle={BugLifecycle.New} />
+          <Typography variant="h6">Created</Typography>
+          <Typography variant="body1">
+            16th September 2025, 1:43 PM UTC+8
+          </Typography>
+          <Typography variant="h6">Updated</Typography>
+          <Typography variant="body1">
+            16th September 2025, 1:46 PM UTC+8
+          </Typography>
+          <Box component="section" width="50%">
+            <Typography variant="h5">Assign Collaborators</Typography>
+            <Stack direction="column" spacing={1.5} mt={1}>
+              <TextField
+                id="collaborators"
+                label="Search for collaborators"
+                variant="outlined"
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  let result = collaborators.filter((element, index) => {
+                    console.log('filtering through collaborators', element);
+                    return element.includes(event.target.value.trim());
+                  });
+                  console.log('Result after filter', result);
+                  setSearchForCollaboratorInput(event.target.value);
+                  setFilteredCollaborators(result);
+                }}
+              />
+              {filteredCollaborators.length >= 1 && (
+                <FormControl>
+                  <InputLabel id="collaborators-assign-select-label">
+                    Select Collaborators
+                  </InputLabel>
+                  <Select
+                    labelId="collaborators-assign-select-label"
+                    id="collaborators-assign-select"
+                    multiple
+                    label="Select Collaborators"
+                    value={collaboratorsSelectedToAssign}
+                    onChange={onCollaboratorsSelectedToAssignHandleChange}
+                  >
+                    {filteredCollaborators.map((collaborator, index) => {
+                      return (
+                        <MenuItem key={index} value={`${collaborator}`}>
+                          {collaborator}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+              )}
+
+              <Button variant="contained">Assign</Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => {
+                  setCollaboratorsSelectedToAssign([]);
+                }}
+              >
+                Clear Selected
+              </Button>
+            </Stack>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
