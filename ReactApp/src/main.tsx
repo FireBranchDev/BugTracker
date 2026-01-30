@@ -18,6 +18,7 @@ import ProjectsPage from './components/pages/ProjectsPage';
 import AuthProtectedRoute from './components/routes/AuthProtectedRoute';
 import UserRequiredProtectedRoute from './components/routes/UserAccountRequiredProtectedRoute';
 import { CREATE_USER_ACCOUNT_PAGE_PATH } from './constants';
+import SignupPage from './pages/SignupPage';
 
 const router = createBrowserRouter([
   {
@@ -66,6 +67,10 @@ const router = createBrowserRouter([
       {
         path: '/not-found',
         element: <NotFoundPage />,
+      },
+      {
+        path: '/signup',
+        element: <SignupPage />
       },
       {
         path: '*',

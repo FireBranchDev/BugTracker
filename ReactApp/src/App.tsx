@@ -1,9 +1,10 @@
-import { createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material';
+import { Box, createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Outlet } from 'react-router-dom';
 import ButtonAppBar from './components/app-bars/ButtonAppBar.tsx';
 import Auth0ProviderWithRedirectCallback from './components/Auth0ProviderWithRedirectCallback.tsx';
 import AxiosProvider from './components/AxiosProvider/AxiosProvider.tsx';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 let theme = createTheme();
 theme = responsiveFontSizes(theme);
@@ -25,12 +26,13 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <AxiosProvider>
-            <>
+            <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
               <ButtonAppBar />
               <Outlet />
-            </>
+            </Box>
           </AxiosProvider>
         </ThemeProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </Auth0ProviderWithRedirectCallback>
   );
