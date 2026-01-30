@@ -49,6 +49,10 @@ public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
 
         modelBuilder.Entity<BugBugPermissionUser>()
             .HasOne(b => b.User);
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.DisplayName)
+            .HasMaxLength(50);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
