@@ -58,6 +58,10 @@ const router = createBrowserRouter([
             path: CREATE_USER_ACCOUNT_PAGE_PATH,
             element: <CreateUserAccountPage />,
           },
+          {
+            path: '/signup',
+            element: <SignupPage />,
+          },
         ],
       },
       {
@@ -68,10 +72,7 @@ const router = createBrowserRouter([
         path: '/not-found',
         element: <NotFoundPage />,
       },
-      {
-        path: '/signup',
-        element: <SignupPage />
-      },
+
       {
         path: '*',
         element: <NotFoundPage />,
