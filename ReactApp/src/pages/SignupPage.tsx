@@ -6,11 +6,11 @@ import {
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
-import { useMutation } from '@tanstack/react-query';
-import {
-  useForm,
-  type SubmitHandler,
-} from 'react-hook-form';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import { useEffect } from 'react';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import image from '../assets/images/zetong-li-rXXSIr8-f9w-unsplash.jpg';
 import { useAxios } from '../components/AxiosProvider/AxiosProvider';
 
@@ -57,10 +57,16 @@ const CssButton = styled(Button)({
 
 type NewUser = {
   displayName: string;
-}
+};
 
 const SignupPage = () => {
   const axios = useAxios();
+  const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormInputs>();
 
   const mutation = useMutation({
     mutationFn: (newUser: NewUser) => {
@@ -68,15 +74,30 @@ const SignupPage = () => {
     },
   });
 
-  const {
-    register,
-    watch,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormInputs>();
-  console.log(watch('displayName'));
+  const query = useQuery({
+    queryKey: ['user'],
+    queryFn: () => {
+      return axios.get('/users');
+    },
+  });
+
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      navigate('/projects');
+    }
+  }, [query.isSuccess]);
+
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-    await mutation.mutateAsync({ displayName: data.displayName });
+    try {
+      await mutation.mutateAsync({ displayName: data.displayName });
+      navigate('/projects');
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.status && error.status === 409) {
+          navigate('/projects');
+        }
+      }
+    }
   };
 
   return (
@@ -106,12 +127,17 @@ const SignupPage = () => {
                 color: 'white',
                 textAlign: 'center',
                 padding: 4,
-                borderRadius: 5
+                borderRadius: 5,
               }}
             >
               {mutation.isError && mutation.error && (
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ color: 'red' }}>
                   {mutation.error.message}
+                </Typography>
+              )}
+              {query.isError && query.error && (
+                <Typography variant="body1" sx={{ color: 'red' }}>
+                  {query.error.message}
                 </Typography>
               )}
               <Typography variant="h5" component="h1">
