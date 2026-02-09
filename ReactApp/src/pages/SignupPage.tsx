@@ -96,8 +96,8 @@ const SignupPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (query.isSuccess) navigate('/projects');
-  }, [query.isSuccess]);
+    if (!query.isPending && query.data?.status === 200) navigate('/projects');
+  }, [query]);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     try {
