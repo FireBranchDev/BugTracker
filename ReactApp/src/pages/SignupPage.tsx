@@ -8,6 +8,7 @@ import {
 import Box from '@mui/material/Box';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import image from '../assets/images/zetong-li-rXXSIr8-f9w-unsplash.jpg';
@@ -93,7 +94,9 @@ const SignupPage = () => {
 
   const navigate = useNavigate();
 
-  if (query.isSuccess) navigate('/projects');
+  useEffect(() => {
+    if (query.isSuccess) navigate('/projects');
+  }, [query.isSuccess]);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     try {
