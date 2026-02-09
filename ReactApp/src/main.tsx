@@ -9,7 +9,6 @@ import App from './App';
 import HomePage from './components/pages/HomePage';
 import './index.css';
 import { DetailedBugPage, ProjectSettings } from './components/pages';
-import CreateUserAccountPage from './components/pages/CreateUserAccountPage';
 import ErrorPage from './components/pages/ErrorPage';
 import ForbiddenPage from './components/pages/ForbiddenPage';
 import NotFoundPage from './components/pages/NotFoundPage';
@@ -17,7 +16,6 @@ import ProjectPage from './components/pages/ProjectPage';
 import ProjectsPage from './components/pages/ProjectsPage';
 import AuthProtectedRoute from './components/routes/AuthProtectedRoute';
 import UserRequiredProtectedRoute from './components/routes/UserAccountRequiredProtectedRoute';
-import { CREATE_USER_ACCOUNT_PAGE_PATH } from './constants';
 import SignupPage from './pages/SignupPage';
 
 const router = createBrowserRouter([
@@ -53,10 +51,6 @@ const router = createBrowserRouter([
                 element: <DetailedBugPage />,
               },
             ],
-          },
-          {
-            path: CREATE_USER_ACCOUNT_PAGE_PATH,
-            element: <CreateUserAccountPage />,
           },
           {
             path: '/signup',
