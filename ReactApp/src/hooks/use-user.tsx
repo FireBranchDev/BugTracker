@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 const useUser = () => {
-  const [hasAccount, setHasAccount] = useState<boolean | undefined>();
+  const [hasAccount, setHasAccount] = useState<boolean>(false);
 
   const { getAccessTokenSilently } = useAuth0();
 
-  const { isPending, isError, data, error } = useQuery({
+  const { isPending, isError, error, data } = useQuery({
     queryKey: ['user-account'],
     queryFn: async () => {
       const accessToken = await getAccessTokenSilently();
@@ -22,15 +22,14 @@ const useUser = () => {
         },
       );
 
-      if (response.status === 404) return false;
-
-      if (response.ok) return true;
+      return response;
     },
   });
 
   useEffect(() => {
-    setHasAccount(data);
-  }, [data]);
+    if (!isPending && !isError && data && data.status === 200)
+      setHasAccount(true);
+  }, [isPending, isError, data]);
 
   return { hasAccount, isPending, isError, error };
 };
