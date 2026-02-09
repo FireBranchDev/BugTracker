@@ -114,7 +114,11 @@ const SignupPage = () => {
   const getError = () => {
     if (mutation.isError) return <Error message={mutation.error.message} />;
 
-    if (query.isError) return <Error message={query.error.message} />;
+    if (query.isError) {
+      // User doesn't have an account, so not displaying an error message.
+      if (isAxiosError(query.error) && query.error.status === 404) return null;
+      return <Error message={query.error.message} />;
+    }
 
     return null;
   };
