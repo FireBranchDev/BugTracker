@@ -13,6 +13,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import image from '../assets/images/zetong-li-rXXSIr8-f9w-unsplash.jpg';
 import { useAxios } from '../components/AxiosProvider/AxiosProvider';
+import Loading from '../components/Loading';
 
 type FormInputs = {
   displayName: string;
@@ -123,6 +124,55 @@ const SignupPage = () => {
     return null;
   };
 
+  const getSignupForm = () => {
+    if (query.isPending || mutation.isPending) return <Loading />;
+
+    return (
+      <>
+        {getError()}
+
+        <Typography variant="h5" component="h1">
+          Create your BugTracker account
+        </Typography>
+        <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <CssTextField
+            {...register('displayName', {
+              required: 'This field is required',
+              maxLength: {
+                value: 50,
+                message: 'This field must not exceed 50 characters',
+              },
+            })}
+            id="display-name-input"
+            label="Display name"
+            fullWidth
+            sx={{ mt: 2 }}
+            error={errors.displayName !== undefined}
+            helperText={
+              errors.displayName?.message !== undefined &&
+              errors.displayName.message
+            }
+          />
+          <CssButton
+            variant="contained"
+            sx={{ mt: 2 }}
+            size="large"
+            fullWidth
+            loading={mutation.isPending}
+            type="submit"
+          >
+            Submit
+          </CssButton>
+        </Box>
+      </>
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -153,46 +203,7 @@ const SignupPage = () => {
                 borderRadius: 5,
               }}
             >
-              {getError()}
-
-              <Typography variant="h5" component="h1">
-                Create your BugTracker account
-              </Typography>
-              <Box
-                component="form"
-                noValidate
-                autoComplete="off"
-                onSubmit={handleSubmit(onSubmit)}
-              >
-                <CssTextField
-                  {...register('displayName', {
-                    required: 'This field is required',
-                    maxLength: {
-                      value: 50,
-                      message: 'This field must not exceed 50 characters',
-                    },
-                  })}
-                  id="display-name-input"
-                  label="Display name"
-                  fullWidth
-                  sx={{ mt: 2 }}
-                  error={errors.displayName !== undefined}
-                  helperText={
-                    errors.displayName?.message !== undefined &&
-                    errors.displayName.message
-                  }
-                />
-                <CssButton
-                  variant="contained"
-                  sx={{ mt: 2 }}
-                  size="large"
-                  fullWidth
-                  loading={mutation.isPending}
-                  type="submit"
-                >
-                  Submit
-                </CssButton>
-              </Box>
+              {getSignupForm()}
             </Box>
           </Box>
         </Container>
