@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 const useUser = () => {
-  const [hasAccount, setHasAccount] = useState<boolean>(false);
+  const [hasAccount, setHasAccount] = useState<boolean | undefined>();
 
   const { getAccessTokenSilently } = useAuth0();
 

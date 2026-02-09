@@ -11,7 +11,7 @@ const UserAccountRequiredProtectedRoute: FC = () => {
   const { hasAccount, isPending, isError } = useUser();
 
   useEffect(() => {
-    if (!isError && !isPending && !hasAccount) navigate('/signup');
+    if (!isError && !isPending && hasAccount === false) navigate('/signup');
   }, [hasAccount, isError, isPending]);
 
   if (hasAccount) return <Outlet />;
