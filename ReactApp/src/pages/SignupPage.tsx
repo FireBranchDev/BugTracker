@@ -8,7 +8,7 @@ import {
 import Box from '@mui/material/Box';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import image from '../assets/images/zetong-li-rXXSIr8-f9w-unsplash.jpg';
@@ -59,6 +59,18 @@ type NewUser = {
   displayName: string;
 };
 
+type Error = {
+  message: string;
+};
+
+const Error = ({ message }: Error) => {
+  return (
+    <Typography variant="body1" sx={{ color: 'red' }}>
+      {message}
+    </Typography>
+  );
+};
+
 const SignupPage = () => {
   const axios = useAxios();
   const navigate = useNavigate();
@@ -100,6 +112,14 @@ const SignupPage = () => {
     }
   };
 
+  const getError = () => {
+    if (mutation.isError) return <Error message={mutation.error.message} />;
+
+    if (query.isError) return <Error message={query.error.message} />;
+
+    return null;
+  };
+
   return (
     <Box
       sx={{
@@ -130,16 +150,8 @@ const SignupPage = () => {
                 borderRadius: 5,
               }}
             >
-              {mutation.isError && mutation.error && (
-                <Typography variant="body1" sx={{ color: 'red' }}>
-                  {mutation.error.message}
-                </Typography>
-              )}
-              {query.isError && query.error && (
-                <Typography variant="body1" sx={{ color: 'red' }}>
-                  {query.error.message}
-                </Typography>
-              )}
+              {getError()}
+
               <Typography variant="h5" component="h1">
                 Create your BugTracker account
               </Typography>
