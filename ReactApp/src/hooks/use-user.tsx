@@ -1,35 +1,32 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { useEffect, useState } from 'react';
+import { useAxios } from '../components/AxiosProvider/AxiosProvider';
 
 const useUser = () => {
   const [hasAccount, setHasAccount] = useState<boolean | undefined>();
 
-  const { getAccessTokenSilently } = useAuth0();
+  const axios = useAxios();
+
+  const userQuery = async () => {
+    const { data } = await axios.get('/users');
+    return data;
+  };
 
   const { isPending, isError, error, data } = useQuery({
-    queryKey: ['user-account'],
-    queryFn: async () => {
-      const accessToken = await getAccessTokenSilently();
-
-      const response = await fetch(
-        `${import.meta.env.VITE_BUGTRACKER_BACKEND_API_ORIGIN}/api/users`,
-        {
-          headers: {
-            authorization: `Bearer ${accessToken}`,
-            'content-type': 'application/json',
-          },
-        },
-      );
-
-      return response;
-    },
+    queryKey: ['user'],
+    queryFn: userQuery,
   });
 
   useEffect(() => {
-    if (!isPending && !isError && data && data.status === 200)
-      setHasAccount(true);
-  }, [isPending, isError, data]);
+    if (data) setHasAccount(true);
+
+    if (isError && isAxiosError(error)) {
+      if (error.status === 404) {
+        setHasAccount(false);
+      }
+    }
+  }, [data, isError, error]);
 
   return { hasAccount, isPending, isError, error };
 };
