@@ -8,15 +8,15 @@ import ErrorPage from '../pages/ErrorPage';
 const UserAccountRequiredProtectedRoute: FC = () => {
   const navigate = useNavigate();
 
-  const { hasAccount, isPending, isError } = useUser();
+  const { hasAccount, isError } = useUser();
 
   useEffect(() => {
-    if (!isError && !isPending && hasAccount === false) navigate('/signup');
-  }, [hasAccount, isError, isPending]);
+    if (hasAccount === false) navigate('/signup');
+  }, [hasAccount]);
 
   if (hasAccount) return <Outlet />;
 
-  if (isError) return <ErrorPage />;
+  if (isError && hasAccount === undefined) return <ErrorPage />;
 
   return <Loading />;
 };
