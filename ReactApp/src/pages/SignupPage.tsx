@@ -125,7 +125,7 @@ const SignupPage = () => {
   };
 
   const getSignupForm = () => {
-    if (query.isPending || mutation.isPending) return <Loading />;
+    if (mutation.isPending) return <Loading />;
 
     return (
       <>
@@ -174,41 +174,47 @@ const SignupPage = () => {
   };
 
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        backgroundImage: `url(${image})`,
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        backgroundSize: 'cover',
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-        }}
-      >
-        <Container fixed sx={{ mb: 10 }}>
-          <Box sx={{ px: 45 }}>
-            <Box
-              sx={{
-                bgcolor: '#292929',
-                color: 'white',
-                textAlign: 'center',
-                padding: 4,
-                borderRadius: 5,
-              }}
-            >
-              {getSignupForm()}
-            </Box>
+    <>
+      {query.isLoading ? (
+        <Loading />
+      ) : (
+        <Box
+          sx={{
+            flexGrow: 1,
+            backgroundImage: `url(${image})`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
+            <Container fixed sx={{ mb: 10 }}>
+              <Box sx={{ px: 45 }}>
+                <Box
+                  sx={{
+                    bgcolor: '#292929',
+                    color: 'white',
+                    textAlign: 'center',
+                    padding: 4,
+                    borderRadius: 5,
+                  }}
+                >
+                  {getSignupForm()}
+                </Box>
+              </Box>
+            </Container>
           </Box>
-        </Container>
-      </Box>
-    </Box>
+        </Box>
+      )}
+    </>
   );
 };
 
