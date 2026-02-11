@@ -16,6 +16,7 @@ import ProjectPage from './components/pages/ProjectPage';
 import ProjectsPage from './components/pages/ProjectsPage';
 import AuthProtectedRoute from './components/routes/AuthProtectedRoute';
 import UserRequiredProtectedRoute from './components/routes/UserAccountRequiredProtectedRoute';
+import ProjectsPageV2 from './pages/ProjectsPageV2';
 import SignupPage from './pages/SignupPage';
 
 const router = createBrowserRouter([
@@ -66,10 +67,13 @@ const router = createBrowserRouter([
         path: '/not-found',
         element: <NotFoundPage />,
       },
-
       {
         path: '*',
         element: <NotFoundPage />,
+      },
+      {
+        path: '/wip',
+        element: <ProjectsPageV2 />,
       },
     ],
   },
